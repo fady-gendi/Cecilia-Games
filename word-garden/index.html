@@ -648,15 +648,6 @@ function picFile(id){
  }
  return PICS[id];
 }
-function canShareFile(p){
- try{return !!(p.file&&navigator.canShare&&navigator.share&&navigator.canShare({files:[p.file]}));}catch(e){return false;}
-}
-/* iPad: opens the share sheet, where "Save Image" puts it in Photos */
-function shareTrophy(id){
- var p=picFile(id);
- if(!canShareFile(p)){toast('Touch and hold the picture, then Save to Photos');return;}
- navigator.share({files:[p.file]}).then(function(){toast('Saved! ✨');})['catch'](function(e){if(e&&e.name!=='AbortError'){toast('Touch and hold the picture, then Save to Photos');}});
-}
 function trophyHtml(id,title){
  var p=picFile(id);
  return '<h2>'+(title||'🏆 New trophy!')+'</h2><img class="trophyimg" src="'+p.url+'" alt="trophy">'+
