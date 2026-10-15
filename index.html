@@ -80,6 +80,7 @@ h1{margin:6px 0;font-size:34px;text-align:center}
 @keyframes rise{from{transform:translateY(40px) scale(.9);opacity:0}}
 .mcard .big{font-size:84px;line-height:1.1}.mcard h2{margin:6px 0;font-size:28px}.mcard p{font-size:20px;margin:6px 0}
 .mcard img{width:100%;max-width:420px;border-radius:18px;box-shadow:0 4px 12px rgba(0,0,0,.2)}
+.mcard textarea{-webkit-user-select:text;user-select:text}
 .mcard input,.mcard select{font:inherit;font-size:20px;padding:10px;border-radius:12px;border:2px solid #b8c4d8;margin:4px;width:90%;max-width:360px;-webkit-user-select:text;user-select:text}
 .mcard .lab{text-align:left;font-size:16px;margin:8px 8% 0;color:#5b6b88}
 a.btn{display:inline-block;text-decoration:none}
@@ -220,11 +221,52 @@ var GATE=1166321523;
 function defState(){
  return {coins:0,stars:0,total:0,streak:0,best:0,cleanRun:0,cleanBest:0,
   lv:{en:1,fr:1,ar:1},solved:{en:0,fr:0,ar:0},target:{en:rnd(10,15),fr:rnd(10,15),ar:rnd(10,15)},
-  clean:{en:true,fr:true,ar:true},used:{},hard:[],owned:{},tro:{},custom:[],name:DEFAULT_NAME};
+  ts:0,clean:{en:true,fr:true,ar:true},used:{},hard:[],owned:{},tro:{},custom:[],name:DEFAULT_NAME};
 }
-function loadState(){
- var d=defState(),s=null,k,j;
- try{s=JSON.parse(localStorage.getItem(KEY));}catch(e){s=null;}
+function slim(o){
+ var t={},k,tr={};
+ for(k in o){if(k==='used'||k==='hard'||k==='custom'||k==='tro'){continue;}t[k]=o[k];}
+ for(k in o.tro){tr[k]=1;}
+ t.tro=tr;t.slim=1;return t;
+}
+function cookieGet(){
+ var m=document.cookie.match(/(?:^|;\s*)wg1=([^;]*)/);
+ if(!m){return null;}
+ try{return JSON.parse(decodeURIComponent(escape(atob(m[1]))));}catch(e){return null;}
+}
+function cookieSet(o){
+ try{document.cookie='wg1='+btoa(unescape(encodeURIComponent(JSON.stringify(slim(o)))))+'; max-age=31536000; path=/; SameSite=Lax';}catch(e){}
+}
+function newer(a,b){
+ if(a&&typeof a!=='object'){a=null;}
+ if(b&&typeof b!=='object'){b=null;}
+ if(a&&b){return (b.ts||0)>(a.ts||0)?b:a;}
+ return a||b;
+}
+function readStore(){
+ var a=null,b=null,t;
+ try{a=JSON.parse(localStorage.getItem(KEY));}catch(e){a=null;}
+ try{t=window.name||'';if(t.indexOf('wg1:')===0){b=JSON.parse(t.substring(4));}}catch(e){b=null;}
+ return newer(newer(a,b),cookieGet());
+}
+/* IndexedDB copy (asynchronous) */
+function idbOpen(cb){
+ try{
+  var r=indexedDB.open('wordgarden',1);
+  r.onupgradeneeded=function(){r.result.createObjectStore('kv');};
+  r.onsuccess=function(){cb(r.result);};
+  r.onerror=function(){cb(null);};
+ }catch(e){cb(null);}
+}
+function idbPut(j){idbOpen(function(db){if(!db){return;}try{db.transaction('kv','readwrite').objectStore('kv').put(j,'state');}catch(e){}});}
+function idbGet(cb){
+ idbOpen(function(db){
+  if(!db){cb(null);return;}
+  try{var q=db.transaction('kv','readonly').objectStore('kv').get('state');q.onsuccess=function(){cb(q.result||null);};q.onerror=function(){cb(null);};}catch(e){cb(null);}
+ });
+}
+function mergeState(s){
+ var d=defState(),k,j;
  if(!s||typeof s!=='object'){return d;}
  for(k in d){
   if(s[k]===undefined||s[k]===null){continue;}
@@ -233,8 +275,24 @@ function loadState(){
  }
  return d;
 }
+function loadState(){return mergeState(readStore());}
 var S=loadState();
-function save(){try{localStorage.setItem(KEY,JSON.stringify(S));}catch(e){}}
+function save(){
+ var j;S.ts=Date.now();j=JSON.stringify(S);
+ try{localStorage.setItem(KEY,j);}catch(e){}
+ try{window.name='wg1:'+j;}catch(e){}
+ cookieSet(S);idbPut(j);
+}
+function storageOK(){
+ try{localStorage.setItem('wg_t','1');var ok=localStorage.getItem('wg_t')==='1';localStorage.removeItem('wg_t');return ok;}catch(e){return false;}
+}
+function makeCode(){return btoa(unescape(encodeURIComponent('WG1'+JSON.stringify(S))));}
+function readCode(c){
+ var t;
+ try{t=decodeURIComponent(escape(atob(String(c).replace(/\s+/g,''))));}catch(e){return null;}
+ if(t.indexOf('WG1')!==0){return null;}
+ try{return JSON.parse(t.substring(3));}catch(e){return null;}
+}
 function minOthers(lang){var m=99,i;for(i=0;i<LANGS.length;i++){if(LANGS[i].id!==lang){m=Math.min(m,S.lv[LANGS[i].id]);}}return m;}
 function minAll(){return Math.min(S.lv.en,S.lv.fr,S.lv.ar);}
 /* A language that is 2 or more levels above the lowest other language waits for them to catch up */
@@ -655,6 +713,10 @@ function parentPanel(){
   S.custom.forEach(function(c,i){h+='<span class="pill" style="font-size:16px;display:inline-block">'+c.e+' '+c.w+' ('+c.lang+' L'+c.lvl+') <span onclick="pDel('+i+')" style="color:#c0392b;padding:6px">✖</span></span>';});
   h+='</div>';
  }
+ h+='<div class="lab">Progress saving</div><p style="font-size:16px;margin:4px 8%">'+(storageOK()?'✅ This browser saves progress on this device.':'⚠️ This view cannot save permanently. Open the game link in Safari (not a preview) and use Add to Home Screen.')+'</p>';
+ h+='<div class="lab">Backup code (copy it somewhere safe, or paste one here to restore)</div><textarea id="pcode" rows="4" style="width:90%;max-width:360px;font-size:14px;border-radius:12px;border:2px solid #b8c4d8;padding:8px"></textarea><br><button class="btn blue" onclick="pMake()">Make code</button><button class="btn blue" onclick="pRestore()">Restore from code</button>';
+ h+='<div class="lab">💾 Save file</div><button class="btn green" onclick="pFileMake()">Make save file</button><div id="pfileLink" style="margin:4px 0"></div>';
+ h+='<div class="lab">📂 Load a save file</div><input id="pfile" type="file" accept=".json,application/json,text/plain" onchange="pFileLoad(this)" style="font-size:16px">';
  h+='<div class="lab">Danger zone</div><button class="btn pink" id="pReset" onclick="pReset()">Reset ALL progress</button><br><button class="btn gray" onclick="closeModal();renderHome()">Close</button>';
  showModal(h);
 }
@@ -674,6 +736,31 @@ function pWord(){
  S.custom.push({lang:l,lvl:v,e:e,w:w,m:m});save();toast('Word added ✅');closeModal();parentPanel();
 }
 function pDel(i){S.custom.splice(i,1);save();closeModal();parentPanel();}
+function pMake(){var t=$('pcode');t.value=makeCode();try{t.focus();t.select();}catch(e){}toast('Code ready — copy it');}
+function pRestore(){
+ var o=readCode($('pcode').value);
+ if(!o){toast('That code is not valid');return;}
+ S=mergeState(o);save();toast('Progress restored ✅');closeModal();renderHome();
+}
+function saveFileName(){var d=new Date();function z(n){return (n<10?'0':'')+n;}return 'word-garden-save-'+d.getFullYear()+'-'+z(d.getMonth()+1)+'-'+z(d.getDate())+'.json';}
+function pFileMake(){
+ var txt=JSON.stringify({app:'wordgarden',v:1,saved:new Date().toISOString(),code:makeCode()}),url,box=$('pfileLink'),nm=saveFileName();
+ try{url=URL.createObjectURL(new Blob([txt],{type:'application/json'}));}catch(e){url='data:application/json;charset=utf-8,'+encodeURIComponent(txt);}
+ box.innerHTML='<a class="btn blue" id="pfileA" href="'+url+'" download="'+nm+'">⬇️ Download '+nm+'</a><p style="font-size:15px;margin:4px 8%">On iPad: tap it, then choose Download. The file goes to Files › Downloads.</p>';
+}
+function pFileLoad(inp){
+ var f=inp.files&&inp.files[0];
+ if(!f){return;}
+ var r=new FileReader();
+ r.onload=function(){
+  var t=String(r.result||''),o=null,j;
+  try{j=JSON.parse(t);if(j&&j.app==='wordgarden'&&j.code){o=readCode(j.code);}}catch(e){o=readCode(t);}
+  if(!o){toast('That is not a Word Garden save file');inp.value='';return;}
+  S=mergeState(o);save();toast('Progress loaded ✅');closeModal();renderHome();
+ };
+ r.onerror=function(){toast('Could not read that file');};
+ r.readAsText(f);
+}
 function pReset(){
  var b=$('pReset');
  if(b.getAttribute('data-c')!=='1'){b.setAttribute('data-c','1');b.textContent='Tap again to erase everything';return;}
@@ -704,6 +791,12 @@ function init(){
  $('hot').addEventListener('click',hotTap);
  window.addEventListener('resize',function(){if(cur==='game'&&G&&G.word){renderWord();}});
  $('bParent').addEventListener('click',parentLogin);
+ try{if(navigator.storage&&navigator.storage.persist){document.addEventListener('click',function ask(){document.removeEventListener('click',ask);navigator.storage.persist();});}}catch(e){}
+ idbGet(function(j){
+  var o=null;
+  try{o=j?JSON.parse(j):null;}catch(e){o=null;}
+  if(o&&(o.ts||0)>(S.ts||0)&&cur==='home'){S=mergeState(o);renderHome();}
+ });
  preloadFaces();
  renderHome();
 }
