@@ -37,44 +37,49 @@ h1 .c{color:#f0559b}
 .soon .art{-webkit-filter:grayscale(.2);filter:grayscale(.2)}
 @media (hover:hover){.card:hover{-webkit-transform:translateY(-3px);transform:translateY(-3px)}}
 @media (max-width:420px){h1{font-size:27px}.card{width:100%;margin:10px 0}}
+.games-section{margin-top:30px}.games-section h2{text-align:center;font-size:30px;margin:10px 0 22px;color:#805996}.games-section .grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:18px}.games-section .card{width:auto;margin:0}.play-section{border-top:3px dashed #d8c3e5;padding-top:25px;margin-top:38px}.play-section .grid{grid-template-columns:repeat(2,minmax(0,1fr));max-width:700px;margin:auto}.games-section .art{height:145px;font-size:80px}.games-section .name{font-size:25px}.games-section .body{padding:15px 12px 20px}.games-section .play{padding:12px 25px}.games-section .desc{font-size:18px;min-height:66px}.wrap{max-width:1150px}@media(max-width:900px){.learn-section .grid{grid-template-columns:repeat(2,minmax(0,1fr));max-width:700px;margin:auto}.games-section .desc{min-height:48px}}@media(max-width:480px){.games-section .grid{grid-template-columns:1fr;max-width:340px}.games-section h2{font-size:27px}.games-section .desc{min-height:0}}
 </style>
-<script src="shared/wallet.js?v=v24"></script></head>
+<script src="shared/wallet.js?v=v25"></script></head>
 <body>
 <div class="wrap">
  <h1>🌈 <span class="c">Cecilia's</span> Games 🌈</h1>
- <p style="text-align:center;font-size:23px"><a href="account/?v=v24" style="color:#9166a4;font-weight:bold;text-decoration:none">👧 Cecilia’s Account · 🪙 <span id="sharedBalance">0</span></a></p>
- <p class="sub">Pick a game and have fun! ✨</p>
- <div class="grid">
-  <a class="card" href="word-garden/?v=v24">
+ <p style="text-align:center;font-size:23px"><a href="account/?v=v25" style="color:#9166a4;font-weight:bold;text-decoration:none">👧 Cecilia’s Account · 🪙 <span id="sharedBalance">0</span></a></p>
+ <p class="sub">Learn, earn coins, then choose an adventure! ✨</p>
+ <section class="games-section learn-section" aria-labelledby="learn-heading">
+  <h2 id="learn-heading">🌟 Learn & Earn</h2>
+  <div class="grid"><a class="card" href="word-garden/?v=v25">
    <div class="art" style="background:#e3f6d8"><span class="mini" style="top:16px;left:22px">🇬🇧</span><span class="mini" style="top:16px;right:22px">🇫🇷</span><span class="mini" style="bottom:14px;right:26px">🇪🇬</span>🌻</div>
    <div class="body"><p class="name">Word Garden</p><p class="desc">Guess the hidden words in English, French and Arabic</p>
     <span class="play" style="background:#3cb371">▶ Play</span><div class="stats" id="wgStats"></div></div>
   </a>
-  <a class="card" href="sentence-stars/?v=v24">
+<a class="card" href="sentence-stars/?v=v25">
    <div class="art" style="background:#ece6ff"><span class="mini" style="top:16px;left:22px">📖</span><span class="mini" style="top:16px;right:22px">✨</span><span class="mini" style="bottom:14px;right:26px">💬</span>⭐</div>
    <div class="body"><p class="name">Sentence Stars</p><p class="desc">Read a sentence and pick the right answer</p>
     <span class="play" style="background:#8e6bff">▶ Play</span><div class="stats" id="ssStats"></div></div>
   </a>
-  <a class="card" href="word-match/?v=v24">
+<a class="card" href="word-match/?v=v25">
    <div class="art" style="background:#ffefd9"><span class="mini" style="top:16px;left:22px">👆</span><span class="mini" style="top:16px;right:22px">🔤</span><span class="mini" style="bottom:14px;right:26px">🖼️</span>🧩</div>
    <div class="body"><p class="name">Word Match</p><p class="desc">Drag each word onto its picture</p>
     <span class="play" style="background:#ff9f43">▶ Play</span><div class="stats" id="wmStats"></div></div>
   </a>
-  <a class="card" href="fashion-studio/?v=v24">
-   <div class="art" style="background:#ffe1ef"><span class="mini" style="top:16px;left:22px">👗</span><span class="mini" style="top:16px;right:22px">👠</span><span class="mini" style="bottom:14px;right:26px">💄</span>🎀</div>
-   <div class="body"><p class="name">Fashion Studio</p><p class="desc">Dress Bella, design clothes and take pictures</p>
-    <span class="play" style="background:#f0559b">▶ Play</span><div class="stats"></div></div>
-  </a>
-  <a class="card" href="math-quest/?v=v24">
+<a class="card" href="math-quest/?v=v25">
    <div class="art" style="background:#ece6ff"><span class="mini" style="top:16px;left:22px">➕</span><span class="mini" style="top:16px;right:22px">🏆</span><span class="mini" style="bottom:14px;right:26px">⭐</span>🚀</div>
    <div class="body"><p class="name">Math Quest</p><p class="desc">Explore number worlds, solve problems and earn trophies</p><span class="play" style="background:#ee65a1">▶ Play</span><div class="stats">36 levels of maths adventures</div></div>
-  </a>
-  <a class="card" href="little-world/?v=v24">
+  </a></div>
+ </section>
+ <section class="games-section play-section" aria-labelledby="play-heading">
+  <h2 id="play-heading">🏡 Play & Create</h2>
+  <div class="grid"><a class="card" href="little-world/?v=v25">
    <div class="art" style="background:#f3dfec"><span class="mini" style="top:16px;left:22px">🧁</span><span class="mini" style="top:16px;right:22px">👗</span><span class="mini" style="bottom:14px;right:26px">🎒</span>🏡</div>
    <div class="body"><p class="name">Little World</p><p class="desc">Dress friends, decorate your home and run a café</p><span class="play" style="background:#c27dac">▶ Play</span><div class="stats">Your world, your stories 💗</div></div>
   </a>
- </div>
- <p class="ver">Version 2.4 · 15 Oct 2026</p>
+<a class="card" href="fashion-studio/?v=v25">
+   <div class="art" style="background:#ffe1ef"><span class="mini" style="top:16px;left:22px">👗</span><span class="mini" style="top:16px;right:22px">👠</span><span class="mini" style="bottom:14px;right:26px">💄</span>🎀</div>
+   <div class="body"><p class="name">Fashion Studio</p><p class="desc">Dress Bella, design clothes and take pictures</p>
+    <span class="play" style="background:#f0559b">▶ Play</span><div class="stats"></div></div>
+  </a></div>
+ </section>
+ <p class="ver">Version 2.5 · 15 Oct 2026</p>
 </div>
 <script>
 /* show each game's progress on its card (same site, so saved games are readable here) */
@@ -86,7 +91,7 @@ function readSave(key,cookie){
 }
 [['wgStats','wordgarden_v1','wg1','words'],['ssStats','sentencestars_v1','ss1','sentences'],['wmStats','wordmatch_v1','wm1','puzzles']].forEach(function(g){
  var s=readSave(g[1],g[2]);
- if(s){document.getElementById(g[0]).textContent='⭐ '+(s.stars||0)+'   🪙 '+(s.coins||0)+'   📖 '+(s.total||0)+' '+g[3];}
+ if(s){document.getElementById(g[0]).textContent='⭐ '+(s.stars||0)+'   📖 '+(s.total||0)+' '+g[3];}
 });
 </script>
 <script>CeciliaWallet.onChange(function(){document.getElementById("sharedBalance").textContent=CeciliaWallet.balance()});</script></body>
