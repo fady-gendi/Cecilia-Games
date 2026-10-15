@@ -221,7 +221,7 @@ var GATE=1166321523;
 function defState(){
  return {coins:0,stars:0,total:0,streak:0,best:0,cleanRun:0,cleanBest:0,
   lv:{en:1,fr:1,ar:1},solved:{en:0,fr:0,ar:0},target:{en:rnd(10,15),fr:rnd(10,15),ar:rnd(10,15)},
-  ts:0,clean:{en:true,fr:true,ar:true},used:{},hard:[],owned:{},tro:{},custom:[],name:DEFAULT_NAME};
+  ts:0,round:null,inGame:false,clean:{en:true,fr:true,ar:true},used:{},hard:[],owned:{},tro:{},custom:[],name:DEFAULT_NAME};
 }
 function slim(o){
  var t={},k,tr={};
@@ -270,7 +270,7 @@ function mergeState(s){
  if(!s||typeof s!=='object'){return d;}
  for(k in d){
   if(s[k]===undefined||s[k]===null){continue;}
-  if(typeof d[k]==='object'&&!(d[k] instanceof Array)){for(j in s[k]){d[k][j]=s[k][j];}}
+  if(d[k]!==null&&typeof d[k]==='object'&&!(d[k] instanceof Array)){for(j in s[k]){d[k][j]=s[k][j];}}
   else{d[k]=s[k];}
  }
  return d;
@@ -400,6 +400,7 @@ function go(name){
  for(i=0;i<s.length;i++){s[i].classList.remove('on');}
  $('s-'+name).classList.add('on');cur=name;
  $('hot').style.display=(name==='home')?'block':'none';
+ if(S.inGame!==(name==='game')){S.inGame=(name==='game');save();}
  if(name==='home'){renderHome();}
  if(name==='book'){renderBook();}
  if(name==='trophy'){renderTrophies();}
@@ -445,7 +446,9 @@ var G=null,PCOL=['#ff6fa8','#ff8a5c','#ffc83d','#7ddc8c','#4f8cff','#b38cff'];
 function startLang(lang){
  if(isLocked(lang)){toast('Super! Play '+LB[weakest()].en+' now so '+LB[lang].en+' can go on 🌟');return;}
  G={lang:lang,attempt:1,misses:0,hints:0,over:false,guessed:{},last:'',word:null};
- buildKB();nextWord();go('game');
+ buildKB();
+ if(S.round&&S.round.lang===lang&&S.round.w){restoreRound();}else{nextWord();}
+ go('game');
 }
 function buildKB(){
  var a=ALPHA[G.lang],h='',i;
@@ -467,6 +470,7 @@ function resetRound(){
  G.guessed[ek]='good';G.freeLetter=ek;
  if(kk){kk.className='key good';kk.disabled=true;}
  $('msg').textContent='One letter is free ✨';
+ saveRound();
  renderGame();
 }
 function renderFlower(){
@@ -524,8 +528,9 @@ function guess(ch){
  }else{$('msg').textContent='Yes! 🎉';}
  var i,all=true;
  for(i=0;i<G.norm.length;i++){if(G.guessed[G.norm[i]]!=='good'){all=false;break;}}
- if(all){G.over=true;G.won=true;onWin();return;}
+ if(all){G.over=true;G.won=true;S.round=null;onWin();return;}
  if(G.misses>=LIVES){G.over=true;G.won=false;onLose();return;}
+ saveRound();
  renderGame();
 }
 function useHint(){
@@ -565,14 +570,42 @@ function afterWin(){
 function onLose(){
  var L=LB[G.lang];
  if(G.attempt===1){
+  S.round={lang:G.lang,e:G.word.e,w:G.word.w,m:G.word.m,g:{},mi:0,h:0,a:2,l:G.last,f:null};
   loseWord(G.lang);renderGame();
   showModal('<div class="big">🥀</div><h2>Oh no!</h2><p>The flower lost its petals.<br>Let\'s try this word again! 💪</p><button class="btn green" onclick="closeModal()">Try again</button>',function(){G.attempt=2;resetRound();});
  }else{
-  G.reveal=true;renderGame();S.hard.push(G.word.w);save();
+  G.reveal=true;renderGame();S.hard.push(G.word.w);S.round=null;save();
   showModal('<div class="big">'+G.word.e+'</div><h2 style="font-size:40px;'+(L.rtl?'direction:rtl':'')+'">'+G.word.w+'</h2>'+(G.word.m?'<p>'+G.word.m+'</p>':'')+
    '<p>This one is tricky! Now let\'s find a brand new word 🌈</p><button class="btn blue" onclick="closeModal()">New word ➜</button>',function(){G.reveal=false;nextWord();});
  }
 }
+
+/* ----- move-by-move auto-save ----- */
+function saveRound(){
+ if(G&&G.word&&!G.over){
+  S.round={lang:G.lang,e:G.word.e,w:G.word.w,m:G.word.m,g:G.guessed,mi:G.misses,h:G.hints,a:G.attempt,l:G.last,f:G.freeLetter};
+ }
+ save();
+}
+function restoreRound(){
+ var r=S.round,i,k,low,keys;
+ G.word={e:r.e,w:r.w,m:r.m};G.last=r.l||r.w;G.attempt=r.a||1;
+ G.misses=r.mi||0;G.hints=r.h||0;G.over=false;G.won=false;G.reveal=false;
+ G.guessed={};for(k in (r.g||{})){G.guessed[k]=r.g[k];}
+ G.chars=G.word.w.split('');G.norm=[];
+ for(i=0;i<G.chars.length;i++){G.norm.push(normCh(G.lang,G.chars[i]));}
+ G.freeLetter=r.f;
+ if(!G.freeLetter){G.freeLetter=G.norm[exposeIdx(G.norm.length,S.lv[G.lang])];G.guessed[G.freeLetter]='good';}
+ keys=$('kb').querySelectorAll('.key');
+ for(i=0;i<keys.length;i++){
+  low=normCh(G.lang,keys[i].getAttribute('data-k'));
+  if(G.guessed[low]){keys[i].className='key '+G.guessed[low];keys[i].disabled=true;}
+  else{keys[i].className='key';keys[i].disabled=false;}
+ }
+ $('msg').textContent='Welcome back! 🌻';
+ saveRound();
+}
+function flushSave(){if(cur==='game'&&G&&G.word&&!G.over){saveRound();}else{save();}}
 /* ===== UI part 2: book, trophies, pictures, parent area, init ===== */
 var bkPage=0,lastBought=-1;
 function ownedCount(pi){var i,n=0;for(i=0;i<8;i++){if(S.owned[pi+'_'+i]){n++;}}return n;}
@@ -798,7 +831,11 @@ function init(){
   if(o&&(o.ts||0)>(S.ts||0)&&cur==='home'){S=mergeState(o);renderHome();}
  });
  preloadFaces();
+ document.addEventListener('visibilitychange',function(){if(document.visibilityState==='hidden'){flushSave();}});
+ window.addEventListener('pagehide',flushSave);
+ window.addEventListener('beforeunload',flushSave);
  renderHome();
+ if(S.inGame&&S.round&&S.round.lang&&!isLocked(S.round.lang)){startLang(S.round.lang);}
 }
 init();
 </script>
