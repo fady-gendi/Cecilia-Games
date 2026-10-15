@@ -143,7 +143,7 @@
  <footer class="footer">No account • No ads • Works offline • Every creation is uniquely yours ♡</footer>
 </div>
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
-<div class="modal" id="picModal" role="dialog" aria-modal="true" aria-label="Your picture"><div class="modal-card"><p id="picMsg">Touch and hold the picture, then choose “Save to Photos” 💗</p><img id="picImg" alt="Bella wearing her designed outfit"><div class="modal-row"><button type="button" id="picShare" style="display:none">📸 Save to Photos</button><a id="picDownload" download="bella-fashion.png" href="#">⬇ Download</a><button type="button" id="picClose">Close</button></div></div></div>
+<div class="modal" id="picModal" role="dialog" aria-modal="true" aria-label="Your picture"><div class="modal-card"><p id="picMsg">Touch and hold the picture, then choose “Save to Photos” 💗</p><img id="picImg" alt="Bella wearing her designed outfit"><div class="modal-row"><a id="picDownload" download="bella-fashion.png" href="#">📸 Save picture</a><button type="button" id="picClose">Close</button></div></div></div>
 <script>
 (function(){'use strict';
 var $=function(id){return document.getElementById(id)};
@@ -435,11 +435,7 @@ $('saveBtn').addEventListener('click',function(){var copy=JSON.parse(JSON.string
 // Picture: shown in an in-page window (works on iPad where pop-ups are blocked): touch & hold to save.
 function closePic(){$('picModal').classList.remove('show')}
 $('picClose').addEventListener('click',closePic);
-var picFileObj=null;
-$('picShare').addEventListener('click',function(){
- if(!picFileObj){toast('Touch and hold the picture to save it');return;}
- navigator.share({files:[picFileObj]}).then(function(){toast('Saved! ✨')})['catch'](function(e){if(e&&e.name!=='AbortError')toast('Touch and hold the picture to save it')});
-});
+var picBlobUrl=null;
 $('picModal').addEventListener('click',function(e){if(e.target===this)closePic()});
 $('pictureBtn').addEventListener('click',function(){
  try{
@@ -453,12 +449,12 @@ $('pictureBtn').addEventListener('click',function(){
     var g=c.getContext('2d');g.fillStyle='#fff';g.fillRect(0,0,1000,1400);g.drawImage(img,0,0,1000,1400);
     var png=c.toDataURL('image/png');
     $('picImg').src=png;$('picDownload').href=png;
-    picFileObj=null;$('picShare').style.display='none';$('picMsg').textContent='Touch and hold the picture, then choose “Save to Photos” 💗';
     try{
      var bin=atob(png.split(',')[1]),arr=new Uint8Array(bin.length);for(var k=0;k<bin.length;k++){arr[k]=bin.charCodeAt(k);}
-     var f=new File([arr],'bella-fashion.png',{type:'image/png'});
-     if(navigator.canShare&&navigator.share&&navigator.canShare({files:[f]})){picFileObj=f;$('picShare').style.display='';$('picMsg').textContent='Tap “📸 Save to Photos”, then choose “Save Image” 💗';}
-    }catch(e2){picFileObj=null;}
+     if(picBlobUrl){try{URL.revokeObjectURL(picBlobUrl);}catch(e3){}}
+     picBlobUrl=URL.createObjectURL(new Blob([arr],{type:'image/png'}));$('picDownload').href=picBlobUrl;
+    }catch(e2){}
+    $('picMsg').textContent='Tap “📸 Save picture” to download it 💗';
     $('picModal').classList.add('show');
    }catch(err){console.error(err);toast('Could not make the picture.')}
   };

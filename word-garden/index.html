@@ -658,10 +658,10 @@ function shareTrophy(id){
  navigator.share({files:[p.file]}).then(function(){toast('Saved! ✨');})['catch'](function(e){if(e&&e.name!=='AbortError'){toast('Touch and hold the picture, then Save to Photos');}});
 }
 function trophyHtml(id,title){
- var p=picFile(id),share=canShareFile(p);
+ var p=picFile(id);
  return '<h2>'+(title||'🏆 New trophy!')+'</h2><img class="trophyimg" src="'+p.url+'" alt="trophy">'+
-  (share?'<p>Tap <b>📸 Save to Photos</b>, then choose <b>Save Image</b></p><button class="btn pink" onclick="shareTrophy(\''+id+'\')">📸 Save to Photos</button>'
-        :'<p>Touch and hold the picture, then choose <b>Save to Photos</b></p><a class="btn blue" href="'+p.url+'" download="trophy-'+id+'.png">⬇️ Download</a>')+
+  '<p>Tap <b>📸 Save picture</b> to download it (PNG)</p>'+
+  '<a class="btn pink" href="'+p.url+'" download="cecilia-trophy-'+id+'.png">📸 Save picture</a>'+
   '<button class="btn green" onclick="closeModal()">Great! ➜</button>';
 }
 function onWin(){
