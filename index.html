@@ -32,6 +32,7 @@ h1 .c{color:#f0559b}
 .desc{font-size:18px;color:#7b6c8f;margin:0 0 14px;min-height:46px}
 .play{display:inline-block;padding:12px 34px;border-radius:999px;color:#fff;font-size:22px;font-weight:bold;box-shadow:0 5px 0 rgba(0,0,0,.15)}
 .stats{font-size:17px;color:#5b4d70;margin-top:12px;min-height:22px}
+.ver{text-align:center;color:#9a8db0;font-size:15px;margin-top:22px}
 .soon{background:rgba(255,255,255,.55);border:4px dashed #d8c8ec;box-shadow:none}
 .soon .art{-webkit-filter:grayscale(.2);filter:grayscale(.2)}
 @media (hover:hover){.card:hover{-webkit-transform:translateY(-3px);transform:translateY(-3px)}}
@@ -43,32 +44,45 @@ h1 .c{color:#f0559b}
  <h1>🌈 <span class="c">Cecilia's</span> Games 🌈</h1>
  <p class="sub">Pick a game and have fun! ✨</p>
  <div class="grid">
-  <a class="card" href="word-garden/?v=20261015c">
+  <a class="card" href="word-garden/?v=v20">
    <div class="art" style="background:#e3f6d8"><span class="mini" style="top:16px;left:22px">🇬🇧</span><span class="mini" style="top:16px;right:22px">🇫🇷</span><span class="mini" style="bottom:14px;right:26px">🇪🇬</span>🌻</div>
-   <div class="body"><p class="name">Word Garden</p><p class="desc">Find the words in English, French and Arabic</p>
+   <div class="body"><p class="name">Word Garden</p><p class="desc">Guess the hidden words in English, French and Arabic</p>
     <span class="play" style="background:#3cb371">▶ Play</span><div class="stats" id="wgStats"></div></div>
   </a>
-  <a class="card" href="fashion-studio/?v=20261015c">
+  <a class="card" href="sentence-stars/?v=v20">
+   <div class="art" style="background:#ece6ff"><span class="mini" style="top:16px;left:22px">📖</span><span class="mini" style="top:16px;right:22px">✨</span><span class="mini" style="bottom:14px;right:26px">💬</span>⭐</div>
+   <div class="body"><p class="name">Sentence Stars</p><p class="desc">Read a sentence and pick the right answer</p>
+    <span class="play" style="background:#8e6bff">▶ Play</span><div class="stats" id="ssStats"></div></div>
+  </a>
+  <a class="card" href="word-match/?v=v20">
+   <div class="art" style="background:#ffefd9"><span class="mini" style="top:16px;left:22px">👆</span><span class="mini" style="top:16px;right:22px">🔤</span><span class="mini" style="bottom:14px;right:26px">🖼️</span>🧩</div>
+   <div class="body"><p class="name">Word Match</p><p class="desc">Drag each word onto its picture</p>
+    <span class="play" style="background:#ff9f43">▶ Play</span><div class="stats" id="wmStats"></div></div>
+  </a>
+  <a class="card" href="fashion-studio/?v=v20">
    <div class="art" style="background:#ffe1ef"><span class="mini" style="top:16px;left:22px">👗</span><span class="mini" style="top:16px;right:22px">👠</span><span class="mini" style="bottom:14px;right:26px">💄</span>🎀</div>
    <div class="body"><p class="name">Fashion Studio</p><p class="desc">Dress Bella, design clothes and take pictures</p>
     <span class="play" style="background:#f0559b">▶ Play</span><div class="stats"></div></div>
   </a>
-  <a class="card" href="math-quest/?v=20261015b">
+  <a class="card" href="math-quest/?v=v20">
    <div class="art" style="background:#dceee6"><span class="mini" style="top:16px;left:22px">➕</span><span class="mini" style="top:16px;right:22px">🏆</span><span class="mini" style="bottom:14px;right:26px">⭐</span>🚀</div>
    <div class="body"><p class="name">Math Quest</p><p class="desc">Explore number worlds, solve problems and earn trophies</p><span class="play" style="background:#237b70">▶ Play</span><div class="stats">36 levels of maths adventures</div></div>
   </a>
  </div>
+ <p class="ver">Version 2.0 · 15 Oct 2026</p>
 </div>
 <script>
-/* show Word Garden progress on its card (same site, so the saved game is readable here) */
-(function(){
+/* show each game's progress on its card (same site, so saved games are readable here) */
+function readSave(key,cookie){
  var s=null,t;
- try{s=JSON.parse(localStorage.getItem('wordgarden_v1'));}catch(e){s=null;}
- if(!s){try{t=document.cookie.match(/(?:^|;\s*)wg1=([^;]*)/);if(t){s=JSON.parse(decodeURIComponent(escape(atob(t[1]))));}}catch(e){s=null;}}
- if(s&&s.lv){
-  document.getElementById('wgStats').textContent='⭐ '+(s.stars||0)+'   🪙 '+(s.coins||0)+'   📖 '+(s.total||0)+' words';
- }
-})();
+ try{s=JSON.parse(localStorage.getItem(key));}catch(e){s=null;}
+ if(!s){try{t=document.cookie.match(new RegExp('(?:^|;\\s*)'+cookie+'=([^;]*)'));if(t){s=JSON.parse(decodeURIComponent(escape(atob(t[1]))));}}catch(e){s=null;}}
+ return s&&s.lv?s:null;
+}
+[['wgStats','wordgarden_v1','wg1','words'],['ssStats','sentencestars_v1','ss1','sentences'],['wmStats','wordmatch_v1','wm1','puzzles']].forEach(function(g){
+ var s=readSave(g[1],g[2]);
+ if(s){document.getElementById(g[0]).textContent='⭐ '+(s.stars||0)+'   🪙 '+(s.coins||0)+'   📖 '+(s.total||0)+' '+g[3];}
+});
 </script>
 </body>
 </html>
