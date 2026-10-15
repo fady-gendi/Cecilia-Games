@@ -1,0 +1,56 @@
+/** Cecilia Global Account — standalone Apps Script backend, v2.4.
+ * Deploy this in a NEW project. It does not replace the existing game backend.
+ * Run setupGlobalWallet() once. Copy FAMILY_KEY from Project Settings > Script properties.
+ * The key belongs in the game's Account settings; never put it in public GitHub files.
+ */
+function setupGlobalWallet(){
+ var p=PropertiesService.getScriptProperties();
+ if(!p.getProperty('FAMILY_KEY'))p.setProperty('FAMILY_KEY',Utilities.getUuid()+Utilities.getUuid());
+ if(!p.getProperty('WALLET_SHEET_ID'))p.setProperty('WALLET_SHEET_ID',SpreadsheetApp.create('Cecilia Global Account').getId());
+ var ss=walletBook_();
+ if(!ss.getSheetByName('Ledger'))ss.insertSheet('Ledger').appendRow(['Id','Source','Kind','Delta','Meta','Created','Status','Error','MigrationTotal','Reason']);
+ if(!ss.getSheetByName('Game_Saves'))ss.insertSheet('Game_Saves').appendRow(['Profile','State','Timestamp']);
+ console.log('Ready. Copy FAMILY_KEY from Script properties, then deploy as a web app. Spreadsheet: '+ss.getUrl());
+}
+function walletBook_(){var id=PropertiesService.getScriptProperties().getProperty('WALLET_SHEET_ID');if(!id)throw Error('Run setupGlobalWallet first');return SpreadsheetApp.openById(id)}
+function json_(o){return ContentService.createTextOutput(JSON.stringify(o)).setMimeType(ContentService.MimeType.JSON)}
+function auth_(key){return typeof key==='string'&&key.length>0&&key===PropertiesService.getScriptProperties().getProperty('FAMILY_KEY')}
+function doGet(e){try{var q=e.parameter||{};if(!auth_(q.key))return json_({ok:false,error:'unauthorized'});if(q.action==='load')return json_(loadGame_(q.p));return json_({ok:false,error:'unknown action'})}catch(x){return json_({ok:false,error:String(x.message||x)})}}
+function doPost(e){try{var q=JSON.parse(e.postData.contents);if(!auth_(q.key))return json_({ok:false,error:'unauthorized'});if(q.action==='wallet.sync')return json_(syncWallet_(q));if(q.action==='save')return json_(saveGame_(q));return json_({ok:false,error:'unknown action'})}catch(x){return json_({ok:false,error:String(x.message||x)})}}
+function syncWallet_(q){
+ if(q.account!=='cecilia'||!Array.isArray(q.events)||q.events.length>80)return {ok:false,error:'bad request'};
+ var lock=LockService.getScriptLock();lock.waitLock(20000);
+ try{
+  var sheet=walletBook_().getSheetByName('Ledger'),rows=sheet.getDataRange().getValues().slice(1),byId={},migrations={},balance=0,results=[],added=[],sources=['wg','ss','wm','math','littleworld','parent'];
+  rows.forEach(function(r){byId[r[0]]=r;if(r[6]==='accepted'){balance+=Number(r[3])||0;if(r[2]==='migration')migrations[r[1]]=Math.max(migrations[r[1]]||0,Number(r[8])||0)}});
+  q.events.forEach(function(e){
+   var id=String(e.id||''),src=String(e.source||''),kind=e.kind,delta=Number(e.delta),meta=e.meta||{},reason=String(e.reason||'').slice(0,160);
+   if(!/^[A-Za-z0-9:_\-.]{1,160}$/.test(id)||sources.indexOf(src)<0||!Number.isSafeInteger(delta)||Math.abs(delta)>1000000||['migration','earn','spend','parent'].indexOf(kind)<0||JSON.stringify(meta).length>4000||(kind==='spend'&&delta>=0)||(kind!=='spend'&&delta<0)||(kind==='earn'&&delta>200)||(kind==='earn'&&['littleworld','parent'].indexOf(src)>=0)||(kind==='parent'&&src!=='parent')||(kind==='migration'&&['wg','ss','wm','math'].indexOf(src)<0)){
+    results.push({id:id,ok:false,error:'invalid event'});return;
+   }
+   if(kind==='migration'){
+    var previous=migrations[src]||0,amount=Math.max(previous,delta),extra=amount-previous;
+    if(extra>0){var mid='migration:'+src+':to:'+amount;var mr=[mid,src,kind,extra,'{}',Date.now(),'accepted','',amount,reason];added.push(mr);byId[mid]=mr;balance+=extra;migrations[src]=amount}
+    results.push({id:id,ok:true,creditedTotal:amount});return;
+   }
+   if(byId[id]){var old=byId[id];results.push({id:id,ok:old[6]==='accepted',error:old[7]||''});return}
+   var ok=delta>=0||balance+delta>=0,error=ok?'':'insufficient funds';
+   var row=[id,src,kind,ok?delta:0,JSON.stringify(meta),Number(e.created)||Date.now(),ok?'accepted':'rejected',error,0,reason];added.push(row);byId[id]=row;if(ok)balance+=delta;
+   results.push({id:id,ok:ok,error:error});
+  });
+  if(added.length)sheet.getRange(sheet.getLastRow()+1,1,added.length,10).setValues(added);
+  SpreadsheetApp.flush();
+  var grants=rows.concat(added).filter(function(r){return r[2]==='spend'&&r[6]==='accepted'&&r[4]&&r[4]!=='{}'}).map(function(r){return {id:r[0],source:r[1],kind:'spend',delta:Number(r[3]),created:Number(r[5]),status:'confirmed',meta:JSON.parse(r[4])}});
+  return {ok:true,account:'cecilia',balance:balance,migrations:migrations,results:results,grants:grants};
+ }finally{lock.releaseLock()}
+}
+function loadGame_(profile){if(!/^[A-Za-z0-9_\-]{1,80}$/.test(profile||''))return {ok:false,error:'bad profile'};var rows=walletBook_().getSheetByName('Game_Saves').getDataRange().getValues();for(var i=1;i<rows.length;i++)if(rows[i][0]===profile)return {ok:true,state:JSON.parse(rows[i][1])};return {ok:true,state:null}}
+function saveGame_(q){
+ if(!/^[A-Za-z0-9_\-]{1,80}$/.test(q.p||'')||!q.state||typeof q.state!=='object')return {ok:false,error:'bad state'};
+ var text=JSON.stringify(q.state);if(text.length>45000)return {ok:false,error:'save too large'};
+ var lock=LockService.getScriptLock();lock.waitLock(20000);
+ try{var sheet=walletBook_().getSheetByName('Game_Saves'),rows=sheet.getDataRange().getValues(),at=-1;for(var i=1;i<rows.length;i++)if(rows[i][0]===q.p){at=i+1;break}
+  if(at>0&&!q.force){var prior=JSON.parse(rows[at-1][1]);if((Number(prior.total)||0)>(Number(q.state.total)||0)||(Number(prior.ts)||0)>(Number(q.state.ts)||0))return {ok:false,error:'older',state:prior}}
+  var data=[[q.p,text,Number(q.state.ts)||Date.now()]];if(at>0)sheet.getRange(at,1,1,3).setValues(data);else sheet.getRange(sheet.getLastRow()+1,1,1,3).setValues(data);return {ok:true,ts:q.state.ts};
+ }finally{lock.releaseLock()}
+}

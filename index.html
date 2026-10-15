@@ -38,42 +38,43 @@ h1 .c{color:#f0559b}
 @media (hover:hover){.card:hover{-webkit-transform:translateY(-3px);transform:translateY(-3px)}}
 @media (max-width:420px){h1{font-size:27px}.card{width:100%;margin:10px 0}}
 </style>
-</head>
+<script src="shared/wallet.js?v=v24"></script></head>
 <body>
 <div class="wrap">
  <h1>🌈 <span class="c">Cecilia's</span> Games 🌈</h1>
+ <p style="text-align:center;font-size:23px"><a href="account/?v=v24" style="color:#9166a4;font-weight:bold;text-decoration:none">👧 Cecilia’s Account · 🪙 <span id="sharedBalance">0</span></a></p>
  <p class="sub">Pick a game and have fun! ✨</p>
  <div class="grid">
-  <a class="card" href="word-garden/?v=v23">
+  <a class="card" href="word-garden/?v=v24">
    <div class="art" style="background:#e3f6d8"><span class="mini" style="top:16px;left:22px">🇬🇧</span><span class="mini" style="top:16px;right:22px">🇫🇷</span><span class="mini" style="bottom:14px;right:26px">🇪🇬</span>🌻</div>
    <div class="body"><p class="name">Word Garden</p><p class="desc">Guess the hidden words in English, French and Arabic</p>
     <span class="play" style="background:#3cb371">▶ Play</span><div class="stats" id="wgStats"></div></div>
   </a>
-  <a class="card" href="sentence-stars/?v=v23">
+  <a class="card" href="sentence-stars/?v=v24">
    <div class="art" style="background:#ece6ff"><span class="mini" style="top:16px;left:22px">📖</span><span class="mini" style="top:16px;right:22px">✨</span><span class="mini" style="bottom:14px;right:26px">💬</span>⭐</div>
    <div class="body"><p class="name">Sentence Stars</p><p class="desc">Read a sentence and pick the right answer</p>
     <span class="play" style="background:#8e6bff">▶ Play</span><div class="stats" id="ssStats"></div></div>
   </a>
-  <a class="card" href="word-match/?v=v23">
+  <a class="card" href="word-match/?v=v24">
    <div class="art" style="background:#ffefd9"><span class="mini" style="top:16px;left:22px">👆</span><span class="mini" style="top:16px;right:22px">🔤</span><span class="mini" style="bottom:14px;right:26px">🖼️</span>🧩</div>
    <div class="body"><p class="name">Word Match</p><p class="desc">Drag each word onto its picture</p>
     <span class="play" style="background:#ff9f43">▶ Play</span><div class="stats" id="wmStats"></div></div>
   </a>
-  <a class="card" href="fashion-studio/?v=v23">
+  <a class="card" href="fashion-studio/?v=v24">
    <div class="art" style="background:#ffe1ef"><span class="mini" style="top:16px;left:22px">👗</span><span class="mini" style="top:16px;right:22px">👠</span><span class="mini" style="bottom:14px;right:26px">💄</span>🎀</div>
    <div class="body"><p class="name">Fashion Studio</p><p class="desc">Dress Bella, design clothes and take pictures</p>
     <span class="play" style="background:#f0559b">▶ Play</span><div class="stats"></div></div>
   </a>
-  <a class="card" href="math-quest/?v=v23">
+  <a class="card" href="math-quest/?v=v24">
    <div class="art" style="background:#ece6ff"><span class="mini" style="top:16px;left:22px">➕</span><span class="mini" style="top:16px;right:22px">🏆</span><span class="mini" style="bottom:14px;right:26px">⭐</span>🚀</div>
    <div class="body"><p class="name">Math Quest</p><p class="desc">Explore number worlds, solve problems and earn trophies</p><span class="play" style="background:#ee65a1">▶ Play</span><div class="stats">36 levels of maths adventures</div></div>
   </a>
-  <a class="card" href="little-world/?v=v23">
+  <a class="card" href="little-world/?v=v24">
    <div class="art" style="background:#f3dfec"><span class="mini" style="top:16px;left:22px">🧁</span><span class="mini" style="top:16px;right:22px">👗</span><span class="mini" style="bottom:14px;right:26px">🎒</span>🏡</div>
    <div class="body"><p class="name">Little World</p><p class="desc">Dress friends, decorate your home and run a café</p><span class="play" style="background:#c27dac">▶ Play</span><div class="stats">Your world, your stories 💗</div></div>
   </a>
  </div>
- <p class="ver">Version 2.3 · 15 Oct 2026</p>
+ <p class="ver">Version 2.4 · 15 Oct 2026</p>
 </div>
 <script>
 /* show each game's progress on its card (same site, so saved games are readable here) */
@@ -88,5 +89,5 @@ function readSave(key,cookie){
  if(s){document.getElementById(g[0]).textContent='⭐ '+(s.stars||0)+'   🪙 '+(s.coins||0)+'   📖 '+(s.total||0)+' '+g[3];}
 });
 </script>
-</body>
+<script>CeciliaWallet.onChange(function(){document.getElementById("sharedBalance").textContent=CeciliaWallet.balance()});</script></body>
 </html>
