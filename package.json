@@ -1,0 +1,11 @@
+{
+  "name": "cecilia-games",
+  "private": true,
+  "description": "Cecilia's learning games and Rainbow Kingdom. Static site for GitHub Pages; no build step.",
+  "scripts": {
+    "test": "node tests/old-ipad-check.cjs && node tests/wallet.cjs"
+  },
+  "devDependencies": {
+    "acorn": "8.14.0"
+  }
+}

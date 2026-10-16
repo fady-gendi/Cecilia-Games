@@ -1,4 +1,6 @@
-/** Cecilia Automatic Account — v2.6.
+/** Cecilia Automatic Account — v3.1.
+ * v3.1: any new game can earn coins and save progress without editing this file
+ *       (sources: lowercase letters/digits; profiles: cecilia_<name>), plus a 'history' action for the parent page.
  * Use a NEW dedicated project. Existing Apps Script projects stay unchanged.
  * Run setupCeciliaAccount() once, then deploy as a web app: Me / Anyone.
  * No browser family key or per-device account setup is required.
@@ -7,6 +9,10 @@
  * Do not store passwords, contact details or other personal data here.
  */
 var CECILIA_PROFILES_=['cecilia','cecilia_sentences','cecilia_match','cecilia_math_quest','cecilia_little_world'];
+/* Old games keep their fixed ids. New games may use any id that matches these patterns. */
+function validProfile_(p){return CECILIA_PROFILES_.indexOf(p)>=0||/^cecilia_[a-z0-9_]{1,40}$/.test(p||'')}
+function validSource_(s){return /^[a-z][a-z0-9]{1,19}$/.test(s||'')}
+var SPEND_ONLY_=['littleworld','parent']; /* these can never 'earn' (parent gifts use kind 'parent') */
 function setupCeciliaAccount(){
  console.log('1/5 Setup started.');
  var lock=LockService.getScriptLock();
@@ -37,8 +43,9 @@ function walletBook_(){var id=PropertiesService.getScriptProperties().getPropert
 function json_(o){return ContentService.createTextOutput(JSON.stringify(o)).setMimeType(ContentService.MimeType.JSON)}
 function doGet(e){try{
  var q=e&&e.parameter||{};
- if(!q.action||q.action==='health')return json_({ok:true,service:'cecilia-auto-account',version:'2.6',account:'cecilia',keyRequired:false});
+ if(!q.action||q.action==='health')return json_({ok:true,service:'cecilia-auto-account',version:'3.1',account:'cecilia',keyRequired:false});
  if(q.action==='load')return json_(loadGame_(q.p));
+ if(q.action==='history')return json_(history_());
  return json_({ok:false,error:'unknown action'});
 }catch(x){return json_({ok:false,error:String(x.message||x)})}}
 function doPost(e){try{
@@ -54,11 +61,11 @@ function syncWallet_(q){
  if(q.account!=='cecilia'||!Array.isArray(q.events)||q.events.length>80)return {ok:false,error:'bad request'};
  var lock=LockService.getScriptLock();lock.waitLock(20000);
  try{
-  var sheet=walletBook_().getSheetByName('Ledger'),rows=sheet.getDataRange().getValues().slice(1),byId={},migrations={},balance=0,results=[],added=[],sources=['wg','ss','wm','math','littleworld','parent'];
+  var sheet=walletBook_().getSheetByName('Ledger'),rows=sheet.getDataRange().getValues().slice(1),byId={},migrations={},balance=0,results=[],added=[];
   rows.forEach(function(r){byId[r[0]]=r;if(r[6]==='accepted'){balance+=Number(r[3])||0;if(r[2]==='migration')migrations[r[1]]=Math.max(migrations[r[1]]||0,Number(r[8])||0)}});
   q.events.forEach(function(e){
    var id=String(e.id||''),src=String(e.source||''),kind=e.kind,delta=Number(e.delta),meta=e.meta||{},reason=String(e.reason||'').slice(0,160);
-   if(!/^[A-Za-z0-9:_\-.]{1,160}$/.test(id)||sources.indexOf(src)<0||!Number.isSafeInteger(delta)||Math.abs(delta)>1000000||['migration','earn','spend','parent'].indexOf(kind)<0||JSON.stringify(meta).length>4000||(kind==='spend'&&delta>=0)||(kind!=='spend'&&delta<0)||(kind==='earn'&&delta>200)||(kind==='earn'&&['littleworld','parent'].indexOf(src)>=0)||(kind==='parent'&&src!=='parent')||(kind==='migration'&&['wg','ss','wm','math'].indexOf(src)<0)){
+   if(!/^[A-Za-z0-9:_\-.]{1,160}$/.test(id)||!validSource_(src)||!Number.isSafeInteger(delta)||Math.abs(delta)>1000000||['migration','earn','spend','parent'].indexOf(kind)<0||JSON.stringify(meta).length>4000||(kind==='spend'&&delta>=0)||(kind!=='spend'&&delta<0)||(kind==='earn'&&delta>200)||(kind==='earn'&&SPEND_ONLY_.indexOf(src)>=0)||(kind==='parent'&&src!=='parent')||(kind==='migration'&&['wg','ss','wm','math'].indexOf(src)<0)){
     results.push({id:id,ok:false,error:'invalid event'});return;
    }
    if(kind==='migration'){
@@ -77,13 +84,22 @@ function syncWallet_(q){
   return {ok:true,account:'cecilia',balance:balance,migrations:migrations,results:results,grants:grants};
  }finally{lock.releaseLock()}
 }
-function loadGame_(profile){if(CECILIA_PROFILES_.indexOf(profile)<0)return {ok:false,error:'bad profile'};var rows=walletBook_().getSheetByName('Game_Saves').getDataRange().getValues();for(var i=1;i<rows.length;i++)if(rows[i][0]===profile)return {ok:true,state:JSON.parse(rows[i][1])};return {ok:true,state:null}}
+function loadGame_(profile){if(!validProfile_(profile))return {ok:false,error:'bad profile'};var rows=walletBook_().getSheetByName('Game_Saves').getDataRange().getValues();for(var i=1;i<rows.length;i++)if(rows[i][0]===profile)return {ok:true,state:JSON.parse(rows[i][1])};return {ok:true,state:null}}
 function saveGame_(q){
- if(CECILIA_PROFILES_.indexOf(q.p)<0||!q.state||typeof q.state!=='object'||Array.isArray(q.state))return {ok:false,error:'bad state'};
+ if(!validProfile_(q.p)||!q.state||typeof q.state!=='object'||Array.isArray(q.state))return {ok:false,error:'bad state'};
  var text=JSON.stringify(q.state);if(text.length>45000)return {ok:false,error:'save too large'};
  var lock=LockService.getScriptLock();lock.waitLock(20000);
  try{var sheet=walletBook_().getSheetByName('Game_Saves'),rows=sheet.getDataRange().getValues(),at=-1;for(var i=1;i<rows.length;i++)if(rows[i][0]===q.p){at=i+1;break}
   if(at>0&&!q.force){var prior=JSON.parse(rows[at-1][1]);if((Number(prior.total)||0)>(Number(q.state.total)||0)||(Number(prior.ts)||0)>(Number(q.state.ts)||0))return {ok:false,error:'older',state:prior}}
   var data=[[q.p,text,Number(q.state.ts)||Date.now()]];if(at>0)sheet.getRange(at,1,1,3).setValues(data);else sheet.getRange(sheet.getLastRow()+1,1,1,3).setValues(data);return {ok:true,ts:q.state.ts};
  }finally{lock.releaseLock()}
+}
+
+/* Parent page: coins earned and spent per game, and the latest 60 coin events (no personal data). */
+function history_(){
+ var rows=walletBook_().getSheetByName('Ledger').getDataRange().getValues().slice(1),by={},recent=[],balance=0;
+ rows.forEach(function(r){if(r[6]!=='accepted')return;var d=Number(r[3])||0,src=String(r[1]);balance+=d;
+  var b=by[src]||(by[src]={earned:0,spent:0,count:0,last:0});if(d>=0)b.earned+=d;else b.spent-=d;b.count++;b.last=Math.max(b.last,Number(r[5])||0)});
+ rows.slice(-60).reverse().forEach(function(r){recent.push({source:String(r[1]),kind:String(r[2]),delta:Number(r[3])||0,created:Number(r[5])||0,status:String(r[6]),reason:String(r[9]||'')})});
+ return {ok:true,balance:balance,bySource:by,recent:recent};
 }

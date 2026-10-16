@@ -1,88 +1,59 @@
-<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="theme-color" content="#ffe9f2"><title>Cecilia’s Account</title><style>*{box-sizing:border-box}body{margin:0;background:linear-gradient(145deg,#ffe6f1,#eee7ff,#def5ff);font-family:'Trebuchet MS',Arial,sans-serif;color:#5c426d;min-height:100vh}main{max-width:950px;margin:auto;padding:22px 18px 75px}a{color:inherit;text-decoration:none}h1{text-align:center;font-size:36px;margin:12px 0}.balance{background:#fffaf0;border:4px solid white;border-radius:30px;text-align:center;padding:24px;margin:20px auto;max-width:520px;box-shadow:0 7px 0 #dac4de}.balance b{font-size:62px;display:block;color:#a97923}.balance p{font-size:21px;margin:10px 0 0}.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:15px}.card{background:#fff9fe;border:3px solid white;border-radius:26px;padding:20px;text-align:center;font-size:22px;font-weight:bold;box-shadow:0 5px 0 #dac9e4}.card span{display:block;font-size:52px;margin:6px}.play{background:#ead6ec;font-size:26px}.subtitle{text-align:center;font-size:22px;margin:24px 0 16px}.history,details{background:#fff9f7;border:3px solid white;border-radius:24px;padding:20px;margin-top:24px}summary{cursor:pointer;font-size:21px;font-weight:bold}.row{display:flex;gap:12px;justify-content:space-between;padding:12px 0;border-bottom:1px solid #eaddec;font-size:18px}.row b{white-space:nowrap}.muted{color:#947e9f;font-size:15px}.plus{color:#35845a}.minus{color:#b55b88}label{display:block;margin:16px 0 5px}input{width:100%;padding:12px;font:inherit;border:2px solid #dcc8e3;border-radius:14px}button{font:inherit;font-weight:bold;border:0;background:#c395ce;color:#fff;padding:13px 20px;border-radius:18px;margin:14px 8px 0 0;cursor:pointer;min-height:48px}p{line-height:1.5}.ver{text-align:center;font-size:14px;color:#9b84a5;margin-top:22px}#accountNote{text-align:center;font-size:17px;color:#8b7297}#setupStatus{font-size:17px}a:focus-visible,button:focus-visible{outline:4px solid #9671be;outline-offset:3px}</style><script data-root="../">
-/* Cecilia's automatic shared account. No per-device setup. */
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="theme-color" content="#ffe8f3">
+<link rel="apple-touch-icon" href="../apple-touch-icon.png">
+<title>My Coins</title>
+<link rel="stylesheet" href="../shared/cecilia.css?v=31">
+<style>
+/* Cecilia's coin page: how many coins, where they come from, where to spend them. */
+*{box-sizing:border-box}
+.wrap{max-width:820px;margin:0 auto;padding:16px 16px 40px;text-align:center}
+.bal{padding:20px;margin:6px 0 16px}
+.bal b{display:block;font-size:64px;color:#7a5200}
+.bal p{font-size:22px;margin:4px 0;color:#6d5a85}
+h2{font-size:28px;margin:22px 0 8px;color:#805996}
+.rules{text-align:left;padding:14px 20px;font-size:22px;line-height:1.6}
+.hist{text-align:left;padding:8px 16px}
+.row{display:-webkit-box;display:-webkit-flex;display:flex;-webkit-box-align:center;-webkit-align-items:center;align-items:center;border-bottom:2px dashed #f0e6f7;padding:10px 4px;font-size:19px}
+.row:last-child{border:0}
+.row span{-webkit-box-flex:1;-webkit-flex:1;flex:1}
+.row b{font-size:22px;white-space:nowrap}
+.plus{color:#2e9e5b}.minus{color:#b04a7a}
+.note{font-size:16px;color:#9a8db0;margin-top:10px}
+</style>
+</head>
+<body class="cg-page" data-cg-title="My Coins">
+<div class="wrap">
+ <div class="bal cg-card"><b><span id="balance">0</span> <i class="cg-c"></i></b><p>One coin box for all my games</p></div>
+ <a class="cg-btn cg-pink cg-wide" id="spend" href="../rainbow-kingdom/">🌈 Spend coins in Rainbow Kingdom</a>
+ <h2>📚 Earn coins</h2>
+ <div class="cg-cards" id="earn"></div>
+ <div class="rules cg-card" id="rules"></div>
+ <h2>📜 My coin story</h2>
+ <div class="hist cg-card" id="history"></div>
+ <p class="note" id="status"></p>
+</div>
+<script src="../shared/cecilia.js?v=31"></script>
+<script>
 (function(){'use strict';
-var ENDPOINT='https://script.google.com/macros/s/AKfycby55_leS-jc2dogE6dF13eEtM9VmghYhcyOq06t_yRI-2rYByh-2SJcvUe1IIYkmwxrYQ/exec';
-var KEY='cecilia_global_wallet_v1',sources=['wg','ss','wm','math','littleworld','parent'],busy=false,timer=null,listeners=[],state,config={url:ENDPOINT};
-var script=document.currentScript,ROOT=script&&script.src?new URL('../',script.src).href:new URL(script&&script.getAttribute&&script.getAttribute('data-root')||'../',location.href).href;
-function read(){try{var s=JSON.parse(localStorage.getItem(KEY));if(s&&s.v===1&&s.entries)return s}catch(e){}return {v:1,account:'cecilia',entries:{},snapshot:null};}
-state=read();if(state.snapshot&&state.snapshot.url!==ENDPOINT){state.snapshot=null;Object.values(state.entries).forEach(function(e){if(e.status==='confirmed')e.status='pending'});try{localStorage.setItem(KEY,JSON.stringify(state))}catch(e){}}
-function configured(){return true}
-function uid(){return window.crypto&&crypto.randomUUID?crypto.randomUUID():Date.now().toString(36)+'-'+Math.random().toString(36).slice(2)}
-function effective(e){if(e.status==='rejected'||e.status==='confirmed')return 0;if(e.kind==='migration'&&state.snapshot)return Math.max(0,e.delta-(state.snapshot.migrations[e.source]||0));return e.delta}
-function balance(){var cloud=configured()&&state.snapshot&&state.snapshot.url===config.url;return Math.max(0,cloud?state.snapshot.balance+Object.values(state.entries).reduce(function(n,e){return n+effective(e)},0):Object.values(state.entries).reduce(function(n,e){return n+(e.status==='rejected'?0:e.delta)},0));}
-function notify(){listeners.forEach(function(fn){try{fn()}catch(e){console.error(e)}});var b=document.getElementById('globalWalletBadge');if(b)b.textContent='👧 🪙 '+balance()+(configured()?'':' · Device');}
-function write(){try{var disk=read();Object.keys(disk.entries).forEach(function(id){if(!state.entries[id])state.entries[id]=disk.entries[id]});localStorage.setItem(KEY,JSON.stringify(state))}catch(e){status='Storage unavailable';}notify();}
-var status=configured()?'Connecting…':'Shared on this device';
-function schedule(){clearTimeout(timer);if(configured())timer=setTimeout(function(){sync(false)},state.snapshot?4000:250)}
-function importCoins(source,n,alreadyShared){if(!sources.includes(source))return;state=read();var id='migration:'+source,n=Math.max(0,Math.floor(Number(n)||0)),old=state.entries[id];if(alreadyShared&&!old)return;if(old&&old.delta>=n)return;if(alreadyShared)return;state.entries[id]={id:id,source:source,kind:'migration',delta:Math.max(n,old?old.delta:0),reason:'Existing '+source+' coins',created:old?old.created:Date.now(),status:'pending',meta:{}};write();schedule()}
-function add(delta,source,reason,id,meta,kind){state=read();id=id||source+':'+uid();if(state.entries[id])return state.entries[id].status!=='rejected'?id:false;if(!Number.isSafeInteger(delta)||Math.abs(delta)>1000000||!sources.includes(source))return false;if(delta<0&&balance()<-delta)return false;state.entries[id]={id:id,source:source,kind:kind||(delta<0?'spend':'earn'),delta:delta,reason:reason,meta:meta||{},created:Date.now(),status:'pending'};write();schedule();return id;}
-function award(n,source,reason,id){return add(Math.max(0,Math.floor(n)),source,reason,id,null,source==='parent'?'parent':'earn')}
-function spend(n,source,reason,id,meta){return add(-Math.abs(Math.floor(n)),source,reason,id,meta,'spend')}
-function records(){return Object.values(state.entries).sort(function(a,b){return b.created-a.created})}
-function purchases(source){var all={};if(state.snapshot)(state.snapshot.grants||[]).filter(function(e){return e.source===source}).forEach(function(e){all[e.id]=e});records().filter(function(e){return e.source===source&&e.kind==='spend'}).forEach(function(e){all[e.id]=e});return Object.values(all)}
-async function request(events){var ctrl=new AbortController(),timeout=setTimeout(function(){ctrl.abort()},30000);try{var r=await fetch(config.url,{method:'POST',body:JSON.stringify({action:'wallet.sync',account:'cecilia',events:events}),redirect:'follow',signal:ctrl.signal});if(r.headers&&/text\/html/i.test(r.headers.get('content-type')||'')){var wrong=new Error('Account server unavailable. Progress remains saved here.');wrong.permanent=true;throw wrong}try{return await r.json()}catch(parseError){if(parseError.permanent)throw parseError;var invalid=new Error('Account server returned an unexpected response. Progress remains saved here.');invalid.permanent=true;throw invalid}}finally{clearTimeout(timeout)}}
-async function sync(force){if(!configured()||busy)return;if(force===false){state=read();if(state.snapshot&&state.snapshot.url===config.url&&Date.now()-state.snapshot.at<15000&&!records().some(function(e){return e.status==='pending'})){status='Cloud synced ✓';notify();return}}busy=true;status='Syncing…';notify();try{state=read();var pending=records().filter(function(e){return e.status==='pending'}).sort(function(a,b){return a.created-b.created}).slice(0,80);var res=await request(pending);if(!res.ok){var err=new Error(res.error||'Account sync failed');err.permanent=true;throw err}if(!Number.isSafeInteger(res.balance)||res.balance<0||!Array.isArray(res.results)){var bad=new Error('Unexpected account response');bad.permanent=true;throw bad}var disk=read();state=disk;res.results.forEach(function(r){var e=state.entries[r.id];if(e){e.status=r.ok?'confirmed':'rejected';e.error=r.error||'';if(e.kind==='migration'&&r.creditedTotal!==undefined)e.delta=r.creditedTotal}});state.snapshot={url:config.url,balance:res.balance,migrations:res.migrations||{},grants:res.grants||[],at:Date.now()};status='Cloud synced ✓';write();if(records().some(function(e){return e.status==='pending'}))schedule()}catch(e){status=e.permanent?e.message:'Connection timed out or offline · saved here';notify();clearTimeout(timer);if(!e.permanent)timer=setTimeout(sync,20000)}finally{busy=false}}
-function flush(){try{var events=records().filter(function(e){return e.status==='pending'}).sort(function(a,b){return a.created-b.created}).slice(0,80),body;if(!events.length||!navigator.sendBeacon)return;do{body=JSON.stringify({action:'wallet.sync',account:'cecilia',events:events});if(body.length<60000)break;events.pop()}while(events.length);if(events.length)navigator.sendBeacon(config.url,new Blob([body],{type:'text/plain'}))}catch(e){/* Pending events remain on the device for safe retry. */}}
-window.addEventListener('pagehide',flush);document.addEventListener('visibilitychange',function(){if(document.visibilityState==='hidden')flush()});
-function mount(){if(document.getElementById('globalWalletBadge'))return;var b=document.createElement('a');b.id='globalWalletBadge';b.href=ROOT+'account/?v=v27';b.style.cssText='position:fixed;left:max(12px,env(safe-area-inset-left));bottom:max(10px,env(safe-area-inset-bottom));z-index:45;padding:9px 15px;border:3px solid white;border-radius:30px;background:#fff4d6;color:#6c4b70;font:bold 17px Trebuchet MS,Arial,sans-serif;text-decoration:none;box-shadow:0 3px 12px #49315422';b.setAttribute('aria-label','Cecilia’s shared coin account');document.body.appendChild(b);notify()}
-window.CeciliaWallet={balance:balance,award:award,spend:spend,importCoins:importCoins,purchases:purchases,records:records,onChange:function(fn){listeners.push(fn);fn()},sync:sync,flush:flush,configured:configured,saveURL:function(){return ENDPOINT},status:function(){return status},uid:uid,root:ROOT,mount:mount};
-window.addEventListener('storage',function(e){if(e.key===KEY){state=read();notify()}});
-window.addEventListener('online',sync);window.addEventListener('focus',function(){state=read();notify();sync(false)});
-if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',mount);else mount();
-// Import existing learning balances once. Game adapters also import a newer legacy cloud copy.
-[['wg','wordgarden_v1'],['ss','sentencestars_v1'],['wm','wordmatch_v1'],['math','cecilia_math_quest_age7_v2']].forEach(function(a){try{var s=JSON.parse(localStorage.getItem(a[1]));if(s)importCoins(a[0],a[0]==='math'?(s.solved||0)*10:s.coins,!!s.walletV)}catch(e){}});
-schedule();
-})();
-
-
-
-/* Automatic background progress saving for Cecilia. */
-(function(){'use strict';
-var W=window.CeciliaWallet,listeners=[],lastAttempt=0;
-function url(){return W.saveURL()}
-function failure(code,message,permanent){var e=new Error(message);e.code=code;e.permanent=!!permanent;return e}
-async function request(action,profile,state,force){
- var endpoint=url();
- var controller=new AbortController(),timer=setTimeout(function(){controller.abort()},30000);
- try{
-  var options=action==='load'?{cache:'no-store',redirect:'follow',signal:controller.signal}:{method:'POST',redirect:'follow',signal:controller.signal,body:JSON.stringify({action:'save',p:profile,state:state,force:!!force})};
-  var response=await fetch(action==='load'?endpoint+'?action=load&p='+encodeURIComponent(profile)+'&t='+Date.now():endpoint,options);
-  if(endpoint!==url())throw failure('changed','Connection updated; reconnecting');
-  if(!response.ok)throw failure('network','Save server unavailable');
-  if(response.headers&&/text\/html/i.test(response.headers.get('content-type')||''))throw failure('deployment','Save server needs configuration',true);
-  var data;try{data=await response.json()}catch(e){throw failure('deployment','Save server needs configuration',true)}
-  if(!data||typeof data.ok!=='boolean')throw failure('deployment','Unexpected save response',true);
-  if(!data.ok&&data.error!=='older')throw failure(data.error||'server','Save server rejected request',true);
-  return data;
- }finally{clearTimeout(timer)}
+var W=CeciliaWallet,G=CeciliaGames,UI=CeciliaUI,C=UI.coin,R=G.coins,esc=UI.esc;
+var h='';G.learn().forEach(function(g){h+='<a class="cg-gcard" style="background:'+g.bg+'" href="'+G.url(g)+'"><span class="cg-gi">'+g.icon+'</span><b>'+esc(g.title)+'</b><small>Earn '+C+'</small></a>'});
+document.getElementById('earn').innerHTML=h;
+document.getElementById('rules').innerHTML='✅ Right answer: <b>+'+R.correct+'</b> '+C+'<br>🌟 No mistakes: <b>+'+R.perfect+'</b> more<br>🔥 5 in a row: <b>+'+R.streak5+'</b><br>🏆 New level: <b>+'+R.level+'</b>';
+function name(src){if(src==='parent')return '👪 Gift';var g=G.get(src);return g?g.icon+' '+g.title:src}
+function render(){
+ document.getElementById('balance').textContent=W.balance();document.getElementById('status').textContent=W.status();
+ var list=W.records().slice(0,40),out='';
+ list.forEach(function(e){var d=e.status==='rejected'?0:e.delta;
+  out+='<div class="row"><span>'+name(e.source)+' · '+esc(e.reason||'')+(e.status==='rejected'?' · returned':'')+'</span><b class="'+(d>=0?'plus':'minus')+'">'+(d>=0?'+':'')+d+' '+C+'</b></div>'});
+ document.getElementById('history').innerHTML=out||'<div class="row"><span>Play a learning game to earn your first coins!</span></div>';
 }
-function resume(force){if(!force&&Date.now()-lastAttempt<30000)return;lastAttempt=Date.now();listeners.forEach(function(fn){try{fn()}catch(e){console.error(e)}})}
-window.CeciliaCloud={load:function(profile){return request('load',profile)},save:function(profile,state,force){return request('save',profile,state,force)},url:url,onReconnect:function(fn){listeners.push(fn)},message:function(e){return e&&e.permanent?'☁️ '+e.message:'💾 Saved here · reconnecting'}};
-window.addEventListener('online',function(){resume(true)});
-window.addEventListener('focus',function(){resume(false)});
-window.addEventListener('cecilia-cloud-change',function(){resume(true)});
-document.addEventListener('visibilitychange',function(){if(document.visibilityState==='visible')resume(false)});
+W.onChange(render);
 })();
-
-
-
-/* Cache static pages only. Cloud requests and saves always reach the server. */
-(function(){'use strict';
-var root=window.CeciliaWallet.root,waiting=[],loading=false;
-function afterPaint(fn){if(window.requestIdleCallback)window.requestIdleCallback(fn,{timeout:2000});else setTimeout(fn,100)}
-function loadPhotos(done){
- if(window.CeciliaTrophyPhotos){done(window.CeciliaTrophyPhotos);return}
- waiting.push(done);if(loading)return;loading=true;
- afterPaint(function(){var script=document.createElement('script');script.src=root+'shared/trophy-photos.js?v=v27';script.async=true;script.fetchPriority='low';script.onload=function(){loading=false;var callbacks=waiting.splice(0);callbacks.forEach(function(fn){fn(window.CeciliaTrophyPhotos||[])})};script.onerror=function(){loading=false;waiting=[]};document.head.appendChild(script)});
-}
-window.CeciliaPerformance={loadPhotos:loadPhotos};
-function register(){if(!('serviceWorker' in navigator))return;navigator.serviceWorker.register(root+'sw.js',{scope:root,updateViaCache:'none'}).then(function(){return navigator.serviceWorker.ready}).then(function(reg){if(reg.active)reg.active.postMessage({type:'CACHE_PAGE',url:location.href})}).catch(function(){/* Browser cache remains available when workers are disabled. */})}
-if(document.readyState==='complete')register();else window.addEventListener('load',register,{once:true});
-})();
-
-</script></head><body><main><a href="../?v=v27" style="font-size:25px">🏠 All games</a><h1>👧 Cecilia’s Account</h1><div class="balance"><b id="balance">🪙 0</b><p>Learn • Earn • Play</p></div><p id="accountNote"></p><section aria-labelledby="account-learn"><h2 class="subtitle" id="account-learn">🌟 Learn & Earn</h2><div class="grid"><a class="card" href="../word-garden/?v=v27"><span>🌻</span>Word Garden</a><a class="card" href="../sentence-stars/?v=v27"><span>⭐</span>Sentence Stars</a><a class="card" href="../word-match/?v=v27"><span>🧩</span>Word Match</a><a class="card" href="../math-quest/?v=v27"><span>🦉</span>Math Quest</a></div></section><section aria-labelledby="account-play" style="margin-top:35px;border-top:3px dashed #d8c3e5;padding-top:8px"><h2 class="subtitle" id="account-play">🏡 Play & Create</h2><div class="grid"><a class="card" href="../little-world/?v=v30"><span>🏡</span>Little World</a><a class="card" href="../fashion-studio/?v=v27"><span>👗</span>Fashion Studio</a></div></section><details><summary>🪙 My coin history</summary><div id="history"></div></details><p class="ver">Version 3.0 · 16 Oct 2026</p></main><script>
-function renderAccount(){const W=CeciliaWallet;document.getElementById('balance').textContent='🪙 '+W.balance();document.getElementById('accountNote').textContent=W.status();const names={wg:'Word Garden',ss:'Sentence Stars',wm:'Word Match',math:'Math Quest',littleworld:'Little World',parent:'Parent'};document.getElementById('history').replaceChildren();W.records().slice(0,30).forEach(e=>{let r=document.createElement('div');r.className='row';let a=document.createElement('span');a.textContent=(names[e.source]||e.source)+' · '+e.reason+(e.status==='rejected'?' · returned':e.status==='pending'&&W.configured()?' · pending':'');let b=document.createElement('b');b.className=e.delta>=0?'plus':'minus';b.textContent=(e.status==='rejected'?'0':e.delta>=0?'+'+e.delta:e.delta)+' 🪙';r.append(a,b);document.getElementById('history').appendChild(r)})}
-CeciliaWallet.onChange(renderAccount);
-</script></body></html>
-
-
+</script>
+</body>
+</html>

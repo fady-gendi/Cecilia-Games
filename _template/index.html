@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<link rel="apple-touch-icon" href="../apple-touch-icon.png">
+<title>My New Game</title>
+<!-- 1. Every game loads the shared look and the shared runtime (coins, cloud save, top bar). -->
+<link rel="stylesheet" href="../shared/cecilia.css?v=31">
+<style>
+/* TEMPLATE for a new learning game. Copy this folder, rename it, then follow README.md "Make a new game".
+   Old-iPad rules: ES5 JavaScript only, no CSS grid/variables/gap, Unicode 6.0 emoji, buttons at least 52px. */
+*{box-sizing:border-box}
+.wrap{max-width:760px;margin:0 auto;padding:16px;text-align:center}
+.q{font-size:70px;line-height:1.2;margin:20px 0 6px;min-height:90px}
+.say{font-size:28px;margin:6px 0 16px}
+.ans{width:110px;height:110px;font-size:46px}
+.msg{font-size:24px;font-weight:bold;min-height:34px;margin-top:10px}
+</style>
+</head>
+<!-- 2. data-cg-game = the id of this game in shared/cecilia.js (GAMES list). The top bar reads title and icon from there. -->
+<body class="cg-page" data-cg-game="template">
+<div class="wrap">
+ <div class="q" id="q"></div>
+ <p class="say" id="say"></p>
+ <div id="answers"></div>
+ <p class="msg" id="msg"></p>
+</div>
+<script src="../shared/cecilia.js?v=31"></script>
+<script>
+(function(){'use strict';
+var W=CeciliaWallet,UI=CeciliaUI,R=CeciliaGames.coins;
+/* 3. Ids: SOURCE earns coins, PROFILE is the cloud save, KEY is the save on this iPad. All must match the GAMES entry. */
+var GAME=CeciliaGames.get('template')||{source:'template',profile:'cecilia_template',key:'template_v1'};
+var SOURCE=GAME.source,PROFILE=GAME.profile,KEY=GAME.key;
+
+/* 4. Save with the STANDARD fields so the parent page understands it: ts, total, stars, lv:{en,fr,ar}, solved:{en,fr,ar}. */
+function fresh(){return {ts:0,total:0,stars:0,streak:0,best:0,lv:{en:1,fr:1,ar:1},solved:{en:0,fr:0,ar:0},target:{en:10,fr:10,ar:10}}}
+var S=fresh();try{var s=JSON.parse(localStorage.getItem(KEY));if(s&&s.lv)S=s}catch(e){}
+var timer=null;
+function save(){S.ts=new Date().getTime();try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){}
+ clearTimeout(timer);timer=setTimeout(function(){CeciliaCloud.save(PROFILE,S).then(function(r){if(!r.ok&&r.state&&r.state.total>S.total){S=r.state;save()}})['catch'](function(){})},2500)}
+CeciliaCloud.load(PROFILE).then(function(r){if(r.state&&r.state.total>S.total){S=r.state;try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){}}})['catch'](function(){});
+
+/* 5. The game itself: "How many?" (replace with your idea). */
+var THINGS=['🍎','⭐','🐟','🌸','🎈'],q=null,tries=0,lang='en';
+function next(){
+ var n=1+Math.floor(Math.random()*5),e=THINGS[Math.floor(Math.random()*THINGS.length)],opts=[n],h='',i;
+ while(opts.length<3){var o=1+Math.floor(Math.random()*6);if(opts.indexOf(o)<0)opts.push(o)}
+ opts.sort(function(){return Math.random()-.5});q={n:n,id:SOURCE+':answer:'+W.uid()};tries=0;
+ document.getElementById('q').innerHTML=new Array(n+1).join(e);
+ document.getElementById('say').textContent='How many?';UI.say('How many?');
+ for(i=0;i<opts.length;i++)h+='<button class="cg-btn cg-blue ans" data-v="'+opts[i]+'">'+opts[i]+'</button>';
+ document.getElementById('answers').innerHTML=h;document.getElementById('msg').textContent='';
+ var bs=document.querySelectorAll('.ans');for(i=0;i<bs.length;i++)bs[i].onclick=pick;
+}
+function pick(){
+ var v=+this.getAttribute('data-v');
+ if(v!==q.n){tries++;S.streak=0;UI.sound('oops');document.getElementById('msg').textContent='Try again! 💪';return}
+ /* 6. STANDARD COIN RULES (same in every game): +10 right, +5 if first try, +10 every 5 in a row, +30 level up.
+       Give each answer a unique id so a retry never pays twice. Never more than 200 coins in one award. */
+ var coins=R.correct+(tries?0:R.perfect);S.total++;S.streak++;S.best=Math.max(S.best,S.streak);S.solved[lang]++;
+ if(S.streak%5===0)coins+=R.streak5;
+ if(S.solved[lang]>=S.target[lang]){S.lv[lang]++;S.solved[lang]=0;S.stars++;coins+=R.level;UI.confetti()}
+ W.award(coins,SOURCE,'Right answer',q.id);  /* the shared bar shows "+15" and the coin counter grows */
+ save();UI.sound('win');document.getElementById('msg').textContent='Yes! Great job!';
+ setTimeout(next,1200);
+}
+next();
+})();
+</script>
+</body>
+</html>

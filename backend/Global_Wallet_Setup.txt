@@ -1,35 +1,18 @@
-CECILIA GAMES — VERSION 2.7 AUTOMATIC ACCOUNT
+CECILIA GAMES — BACKEND (version 3.1)
 
-The games now connect automatically to the deployed Cecilia Automatic Account.
-No family key, Parent connection form, per-device URL, or account-linking step
-is required. Open the updated games normally on each browser.
+The live server is a Google Apps Script web app (address = ENDPOINT in shared/cecilia.js).
+Source code: Cecilia_Auto_Account_CodeGS.txt  (Global_Wallet_CodeGS.txt is an old, unused v2.4 copy.)
 
-The original Apps Script project and its saved data have not been changed.
-The new dedicated backend was deployed by the owner. Its source is in
-Cecilia_Auto_Account_CodeGS.txt. It creates and uses its own account spreadsheet.
+Redeploy after changing the code (keeps the same URL):
+ 1. script.google.com → open the "Cecilia Automatic Account" project.
+ 2. Replace Code.gs with Cecilia_Auto_Account_CodeGS.txt.
+ 3. Deploy → Manage deployments → Edit (pencil) → Version: New version → Deploy.
+    Execute as: Me. Who has access: Anyone.
 
-Existing coins on a browser are imported once per educational game. Local
-progress is loaded first, then merged with the server save in the background.
-Open each game on the browser where Cecilia already plays so its local progress
-can reach the new service. Saves that exist only in the old server are retained
-there; this release does not read the old server without its original key.
+What it stores (Google Sheet "Cecilia Global Account"):
+ - Ledger: one row per coin event (earn / spend / parent gift / migration), with a unique id.
+ - Game_Saves: one row per game profile (latest progress JSON).
 
-All six games display one shared coin account. The educational games award
-coins; Little World spends them. Fashion Studio remains free play with local
-favorite looks. Stars and trophies stay in their individual games.
-
-The service is keyless and restricted to Cecilia's five progress profiles and
-virtual coin operations. Anyone who knows its URL can access that game data.
-Do not store passwords, contact information or other private data in it.
-
-Offline play saves on the device. Requests retry when the browser reconnects.
-Offline purchases remain provisional until confirmed by the server. The ledger
-uses stable transaction IDs, serializes changes, and rejects overspending.
-
-PERFORMANCE IN VERSION 2.7
-Language pages load their existing trophy photos in one shared background file.
-Startup scripts are bundled into the HTML; saved progress and cloud APIs stay
-unchanged. Visited static pages are cached by a scoped service worker and
-refreshed in the background. Cloud requests are never served from that cache.
-The same-browser wallet snapshot can be reused for 15 seconds when no coin
-events are queued. Explicit sync and pending events still reach the server.
+v3.1 adds: any new game id can earn and save (sources a-z0-9, profiles cecilia_<name>),
+and action=history (coins per game from all devices) for the parent page.
+The service is keyless: anyone with the URL can read or change game data. Store no personal data.

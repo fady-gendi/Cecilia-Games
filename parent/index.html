@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="theme-color" content="#ffe8f3">
+<meta name="robots" content="noindex">
+<link rel="apple-touch-icon" href="../apple-touch-icon.png">
+<title>Parent Dashboard</title>
+<link rel="stylesheet" href="../shared/cecilia.css?v=31">
+<style>
+/* Parent dashboard: Cecilia's progress in every game and language, from this device and the cloud. */
+*{box-sizing:border-box}
+body{-webkit-user-select:text;user-select:text}
+.wrap{max-width:1000px;margin:0 auto;padding:16px 14px 40px}
+.box{padding:16px 18px;margin:12px 0}
+h1{font-size:30px;margin:6px 0;text-align:center}
+h2{font-size:24px;margin:0 0 10px}
+h3{font-size:20px;margin:12px 0 6px}
+input{font:inherit;font-size:22px;width:100%;max-width:360px;padding:12px 14px;border-radius:14px;border:3px solid #e3d8f2;margin:6px 0;-webkit-user-select:text;user-select:text;-webkit-appearance:none}
+.login{max-width:440px;margin:30px auto;text-align:center}
+.err{color:#c0392b;font-weight:bold;min-height:24px}
+table{width:100%;border-collapse:collapse;font-size:18px}
+th,td{padding:8px 6px;text-align:left;border-bottom:2px solid #f2ebf8}
+th{color:#6d5a85;font-size:16px}
+td.n{text-align:right;font-weight:bold}
+.kpis{text-align:center}
+.kpi{display:inline-block;vertical-align:top;width:200px;margin:6px;padding:14px 8px}
+.kpi b{display:block;font-size:34px}
+.kpi span{font-size:16px;color:#6d5a85}
+.games .g{display:inline-block;vertical-align:top;width:48%;margin:1%;padding:14px 16px}
+.g .t{font-size:22px;font-weight:bold;margin-bottom:6px}
+.g ul{margin:6px 0 0;padding-left:22px;font-size:17px;line-height:1.55}
+.src{font-size:13px;color:#9a8db0}
+.lvl{display:inline-block;min-width:34px;padding:2px 8px;border-radius:10px;background:#f3ecff;font-weight:bold;text-align:center}
+.bar{height:10px;border-radius:5px;background:#eee6f6;overflow:hidden;margin-top:4px}
+.bar i{display:block;height:100%;background:#3cb371}
+.actions{text-align:center}
+.small{font-size:15px;color:#9a8db0}
+@media (max-width:700px){.games .g{width:100%;margin:8px 0}.kpi{width:44%}}
+</style>
+</head>
+<body class="cg-page" data-cg-title="Parent Dashboard">
+<div class="wrap" id="root"></div>
+<script src="../shared/cecilia.js?v=31"></script>
+<script>
+(function(){'use strict';
+var W=CeciliaWallet,G=CeciliaGames,UI=CeciliaUI,C=UI.coin,esc=UI.esc;
+/* Login: the password is not stored here, only its SHA-256 fingerprint of "cecilia-games:<name>:<password>".
+ * To change it run:  node -e "console.log(require('crypto').createHash('sha256').update('cecilia-games:NAME:PASSWORD').digest('hex'))"
+ * NOTE: this is a light lock for a static site, not bank-level security. */
+var LOGIN_HASH='e94c06094e7a2afd06afa7694eb39075f12906e2330efd90e4b875b277ad66ae',SESSION='cecilia_parent_session';
+
+/* SHA-256 in plain ES5 (old iPads have no crypto.subtle) */
+function sha256(ascii){
+ function rr(v,a){return (v>>>a)|(v<<(32-a))}
+ var mp=Math.pow,max=mp(2,32),res='',words=[],bitLen,i,j,hash=[],k=[],isC={},c;
+ ascii=unescape(encodeURIComponent(ascii));bitLen=ascii.length*8;
+ for(c=2;hash.length<64;c++){if(!isC[c]){for(i=0;i<313;i+=c)isC[i]=c;hash.push((mp(c,.5)*max)|0);k.push((mp(c,1/3)*max)|0)}}
+ hash=hash.slice(0,8);ascii+='\x80';while(ascii.length%64-56)ascii+='\x00';
+ for(i=0;i<ascii.length;i++){j=ascii.charCodeAt(i);words[i>>2]|=j<<((3-i)%4)*8}
+ words[words.length]=((bitLen/max)|0);words[words.length]=bitLen;
+ for(j=0;j<words.length;){var w=words.slice(j,j+=16),old=hash;hash=hash.slice(0,8);
+  for(i=0;i<64;i++){var w15=w[i-15],w2=w[i-2],a=hash[0],e=hash[4];
+   var t1=hash[7]+(rr(e,6)^rr(e,11)^rr(e,25))+((e&hash[5])^((~e)&hash[6]))+k[i]+(w[i]=(i<16)?w[i]:(w[i-16]+(rr(w15,7)^rr(w15,18)^(w15>>>3))+w[i-7]+(rr(w2,17)^rr(w2,19)^(w2>>>10)))|0);
+   var t2=(rr(a,2)^rr(a,13)^rr(a,22))+((a&hash[1])^(a&hash[2])^(hash[1]&hash[2]));
+   hash=[(t1+t2)|0].concat(hash);hash[4]=(hash[4]+t1)|0;hash.length=8}
+  for(i=0;i<8;i++)hash[i]=(hash[i]+old[i])|0}
+ for(i=0;i<8;i++)for(j=3;j+1;j--){var b=(hash[i]>>(j*8))&255;res+=(b<16?'0':'')+b.toString(16)}
+ return res;
+}
+function loggedIn(){try{var s=JSON.parse(localStorage.getItem(SESSION));return s&&s.h===LOGIN_HASH&&s.until>new Date().getTime()}catch(e){return false}}
+function $(id){return document.getElementById(id)}
+function showLogin(){
+ $('root').innerHTML='<div class="login cg-card box"><div class="cg-big">👪</div><h1>Grown-ups only</h1><p class="small">Sign in to see Cecilia’s progress.</p>'+
+  '<form id="f"><input id="u" placeholder="Name" autocapitalize="none" autocorrect="off" autocomplete="username"><input id="p" type="password" placeholder="Password" autocomplete="current-password">'+
+  '<div class="err" id="err"></div><button class="cg-btn cg-pink" type="submit">Sign in</button></form><p><a href="../">⬅ Back to games</a></p></div>';
+ $('f').onsubmit=function(e){e.preventDefault();var h=sha256('cecilia-games:'+$('u').value.replace(/^\s+|\s+$/g,'').toLowerCase()+':'+$('p').value);
+  if(h===LOGIN_HASH){try{localStorage.setItem(SESSION,JSON.stringify({h:h,until:new Date().getTime()+30*864e5}))}catch(x){}render()}
+  else{$('err').textContent='That name or password is not right.';$('p').value=''}};
+}
+
+/* ---------- data ---------- */
+var cloud={},loading=0,hist=null;
+function best(g){var l=G.localSave(g),c=cloud[g.id],ls=G.summarize(g,l),cs=G.summarize(g,c);
+ if(!ls&&!cs)return null;if(!cs)return {s:ls,raw:l,from:'this iPad'};if(!ls)return {s:cs,raw:c,from:'cloud'};
+ return (cs.ts>ls.ts||cs.total>ls.total)?{s:cs,raw:c,from:'cloud'}:{s:ls,raw:l,from:'this iPad'};
+}
+function loadCloud(){
+ G.list.forEach(function(g){if(!g.profile)return;loading++;
+  CeciliaCloud.load(g.profile).then(function(r){if(r&&r.ok&&r.state)cloud[g.id]=r.state;loading--;draw()})['catch'](function(){loading--;draw()})});
+ W.sync();
+ CeciliaCloud.history().then(function(h){hist=h;draw()})['catch'](function(){hist=null});
+}
+function when(ts){if(!ts)return '—';var d=new Date(ts),days=Math.floor((new Date().getTime()-ts)/864e5);
+ return days<=0?'today':(days===1?'yesterday':days+' days ago')+' ('+d.getDate()+'/'+(d.getMonth()+1)+')'}
+
+/* ---------- page ---------- */
+function render(){
+ $('root').innerHTML='<h1>👪 Cecilia’s progress</h1><div class="kpis" id="kpis"></div>'+
+  '<div class="box cg-card"><h2>🌍 Languages</h2><div id="langs"></div></div>'+
+  '<div class="games" id="games"></div>'+
+  '<div class="box cg-card"><h2>'+C+' Coins</h2><div id="coins"></div></div>'+
+  '<div class="box cg-card actions"><h2>🎁 Give coins</h2><p class="small">A gift shows in her coin story as “Gift”.</p>'+
+  '<button class="cg-btn cg-green" data-g="10">+10</button><button class="cg-btn cg-green" data-g="50">+50</button><button class="cg-btn cg-green" data-g="100">+100</button></div>'+
+  '<div class="actions"><button class="cg-btn cg-blue" id="refresh">🔄 Refresh</button><button class="cg-btn cg-gray" id="out">Sign out</button></div>'+
+  '<p class="small" style="text-align:center" id="st"></p>';
+ var gs=document.querySelectorAll('[data-g]');for(var i=0;i<gs.length;i++)(function(b){b.onclick=function(){var n=+b.getAttribute('data-g');
+  var c=UI.modal('<h2>Give '+n+' coins?</h2><button class="cg-btn cg-green" id="yes">Yes, give '+n+'</button><button class="cg-btn cg-gray" id="no">No</button>');
+  $('yes').onclick=function(){W.award(n,'parent','Gift from parents');UI.close();UI.toast('+'+n+' coins given')};$('no').onclick=UI.close}})(gs[i]);
+ $('refresh').onclick=function(){cloud={};loadCloud();draw()};
+ $('out').onclick=function(){try{localStorage.removeItem(SESSION)}catch(e){}showLogin()};
+ draw();loadCloud();
+}
+function draw(){
+ if(!$('games'))return;
+ var learnStars=0,learnTotal=0,last=0,gh='',langRows={en:[],fr:[],ar:[]},langGames=[];
+ G.list.forEach(function(g){
+  var b=best(g),s=b&&b.s;
+  if(g.kind==='learn'&&s){learnStars+=s.stars;learnTotal+=s.total}
+  if(s&&s.ts>last)last=s.ts;
+  if(g.langs.length){langGames.push(g);for(var k in langRows)langRows[k].push(s&&s.langs[k]?s.langs[k]:null)}
+  if(!g.profile&&g.kind==='play'){gh+='<div class="g cg-card"><div class="t">'+g.icon+' '+esc(g.title)+'</div><ul><li>Free play, no coins.</li></ul></div>';return}
+  gh+='<div class="g cg-card"><div class="t">'+g.icon+' '+esc(g.title)+'</div>';
+  if(!s)gh+='<ul><li>Not played yet</li></ul>';
+  else{gh+='<ul>';s.lines.forEach(function(l){gh+='<li>'+esc(l)+'</li>'});gh+='<li>Last played: '+when(s.ts)+'</li></ul>';
+   if(g.id==='rk'&&b.raw)gh+=rkDetail(b.raw);
+   gh+='<div class="src">From '+b.from+'</div>'}
+  gh+='</div>';
+ });
+ $('games').innerHTML=gh;
+ $('kpis').innerHTML=kpi(W.balance()+' '+C,'coins now')+kpi(learnTotal,'answers solved')+kpi(learnStars,'stars earned')+kpi(when(last).split(' (')[0],'last played');
+ var lh='<table><tr><th>Language</th>';langGames.forEach(function(g){lh+='<th>'+g.icon+' '+esc(g.title)+'</th>'});lh+='</tr>';
+ for(var k in langRows){lh+='<tr><td><b>'+G.langNames[k]+'</b></td>';langRows[k].forEach(function(v){
+   lh+='<td>'+(v?'<span class="lvl">Lv '+v.level+'</span> '+(v.target?v.solved+' / '+v.target:'')+(v.target?'<div class="bar"><i style="width:'+Math.min(100,Math.round(v.solved/v.target*100))+'%"></i></div>':''):'—')+'</td>'});lh+='</tr>'}
+ $('langs').innerHTML=lh+'</table><p class="small">Lv = level in that language. The numbers show answers done towards the next level.</p>';
+ var earned={},spent=0,ch='<table><tr><th>Where</th><th class="n">Coins</th></tr>',k;
+ if(hist){for(k in hist.bySource){earned[k]=hist.bySource[k].earned;spent+=hist.bySource[k].spent}}
+ else{earned=W.earned();W.records().forEach(function(e){if(e.delta<0&&e.status!=='rejected')spent-=e.delta})}
+ G.list.forEach(function(g){if(g.kind==='learn')ch+='<tr><td>'+g.icon+' Earned in '+esc(g.title)+'</td><td class="n">+'+(earned[g.source]||0)+'</td></tr>'});
+ ch+='<tr><td>👪 Gifts</td><td class="n">+'+(earned.parent||0)+'</td></tr>';
+ ch+='<tr><td>🌈 Spent in Rainbow Kingdom</td><td class="n">−'+spent+'</td></tr><tr><td><b>Balance (all devices)</b></td><td class="n">'+W.balance()+'</td></tr></table>'+
+  '<p class="small">'+(hist?'Totals from every device (cloud).':'Totals from this iPad only. Redeploy the backend v3.1 (see README) to see every device.')+'</p>';
+ if(hist&&hist.recent){ch+='<h3>Latest coin events</h3><table>';hist.recent.slice(0,15).forEach(function(e){var g=G.get(e.source);
+  ch+='<tr><td>'+(e.source==='parent'?'👪 Gift':(g?g.icon+' '+esc(g.title):esc(e.source)))+' · '+esc(e.reason)+'</td><td>'+when(e.created)+'</td><td class="n">'+(e.status==='accepted'?(e.delta>0?'+':'')+e.delta:'refused')+'</td></tr>'});ch+='</table>'}
+ $('coins').innerHTML=ch;
+ $('st').textContent=(loading?'Loading from the cloud… ':'')+'Coin account: '+W.status();
+}
+function kpi(v,l){return '<div class="kpi cg-card"><b>'+v+'</b><span>'+esc(l)+'</span></div>'}
+function rkDetail(s){
+ var items=0,list=[];W.purchases('littleworld').forEach(function(e){if(e.meta&&e.meta.type==='adv'&&e.status!=='rejected'){items++}});
+ return '<div class="small">Things bought: '+items+'</div>';
+}
+if(loggedIn())render();else showLogin();
+W.onChange(function(){if($('kpis'))draw()});
+window.CeciliaParent={sha256:sha256};
+})();
+</script>
+</body>
+</html>

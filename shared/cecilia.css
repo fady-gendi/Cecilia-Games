@@ -1,0 +1,76 @@
+/* Cecilia's Games shared look v3.1 — every game links this file:
+ *   <link rel="stylesheet" href="../shared/cecilia.css?v=31">
+ * Old-iPad safe: no CSS variables, no grid, no gap, -webkit- prefixes kept.
+ * Palette: ink #3d2f52 · pink #f0559b · purple #8e6bff · green #3cb371 · orange #ff9f43 · blue #4f8cff · gold #f5b800
+ * Font: rounded system font. Buttons: 18px radius, 5px bottom shadow, min 52px tall.
+ */
+.cg-with-bar{padding-top:62px}
+.cg-bar{position:fixed;top:0;left:0;right:0;z-index:60;height:62px;display:-webkit-box;display:-webkit-flex;display:flex;-webkit-box-align:center;-webkit-align-items:center;align-items:center;
+ padding:0 10px;padding-left:max(10px,env(safe-area-inset-left));padding-right:max(10px,env(safe-area-inset-right));
+ background:#fff;background:rgba(255,255,255,.94);border-bottom:3px solid #f3dcef;box-shadow:0 3px 10px rgba(61,47,82,.08);
+ font-family:"Arial Rounded MT Bold","Trebuchet MS","Geeza Pro","Noto Sans Arabic",Arial,sans-serif;color:#3d2f52;
+ -webkit-user-select:none;user-select:none;-webkit-touch-callout:none;box-sizing:border-box}
+.cg-bar *{box-sizing:border-box}
+.cg-home,.cg-coins{display:block;height:48px;min-width:52px;border:0;border-radius:24px;font:inherit;font-weight:bold;text-decoration:none;cursor:pointer;
+ touch-action:manipulation;-webkit-transition:-webkit-transform .1s;transition:transform .1s}
+.cg-home{width:56px;line-height:48px;text-align:center;font-size:26px;background:#f3ecff;color:#3d2f52;box-shadow:0 4px 0 #ddd0f3}
+.cg-title{-webkit-box-flex:1;-webkit-flex:1;flex:1;text-align:center;font-size:24px;font-weight:bold;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;padding:0 8px}
+.cg-ticon{font-size:28px}
+.cg-coins{padding:0 16px;font-size:23px;background:#fff4d6;color:#7a5200;box-shadow:0 4px 0 #f1d58e;white-space:nowrap}
+.cg-coins b{font-size:24px}
+.cg-home:active,.cg-coins:active{-webkit-transform:translateY(3px);transform:translateY(3px)}
+.cg-pop{-webkit-animation:cgpop .6s;animation:cgpop .6s}
+@-webkit-keyframes cgpop{0%{-webkit-transform:scale(1)}40%{-webkit-transform:scale(1.25);background:#ffe27a}100%{-webkit-transform:scale(1)}}
+@keyframes cgpop{0%{transform:scale(1)}40%{transform:scale(1.25);background:#ffe27a}100%{transform:scale(1)}}
+@media (max-width:480px){.cg-title{font-size:19px}.cg-ticon{font-size:22px}.cg-coins{font-size:19px;padding:0 11px}.cg-home{width:50px}}
+
+.cg-fly{position:fixed;left:50%;top:45%;z-index:90;margin-left:-70px;width:140px;text-align:center;font:bold 34px "Arial Rounded MT Bold","Trebuchet MS",Arial,sans-serif;color:#d38b00;
+ text-shadow:0 2px 0 #fff,0 0 8px #fff;pointer-events:none;-webkit-transition:all 1.1s ease-in;transition:all 1.1s ease-in}
+.cg-fly.cg-minus{color:#b04a7a}
+.cg-fly.cg-go{top:8px;left:100%;margin-left:-110px;opacity:.2;-webkit-transform:scale(.6);transform:scale(.6)}
+
+.cg-toast{position:fixed;left:50%;top:136px;z-index:95;max-width:90%;-webkit-transform:translateX(-50%);transform:translateX(-50%);padding:12px 24px;border-radius:30px;
+ background:#3d2f52;color:#fff;font:bold 22px "Arial Rounded MT Bold","Trebuchet MS",Arial,sans-serif;text-align:center;pointer-events:none;opacity:0;-webkit-transition:opacity .25s;transition:opacity .25s}
+.cg-toast.cg-on{opacity:1}
+
+.cg-modal{position:fixed;top:0;left:0;right:0;bottom:0;z-index:100;background:rgba(40,25,60,.55);overflow-y:auto;-webkit-overflow-scrolling:touch;padding:72px 14px 20px;text-align:center}
+.cg-mcard{position:relative;display:inline-block;width:100%;max-width:620px;background:#fff;border-radius:30px;padding:22px 18px 18px;text-align:center;color:#3d2f52;
+ font-family:"Arial Rounded MT Bold","Trebuchet MS","Geeza Pro",Arial,sans-serif;box-shadow:0 10px 30px rgba(0,0,0,.25);-webkit-animation:cgrise .3s;animation:cgrise .3s}
+@-webkit-keyframes cgrise{from{-webkit-transform:translateY(40px);opacity:0}}
+@keyframes cgrise{from{transform:translateY(40px);opacity:0}}
+.cg-mcard h2{margin:4px 0 8px;font-size:30px}
+.cg-mcard p{font-size:21px;margin:8px 0;line-height:1.35}
+.cg-x{position:absolute;top:10px;right:10px;width:50px;height:50px;border:0;border-radius:25px;background:#f3ecff;font-size:22px;color:#6d5a85;cursor:pointer;touch-action:manipulation}
+.cg-big{font-size:76px;line-height:1.1}
+.cg-sub{color:#6d5a85}
+.cg-small{font-size:16px!important;color:#9a8db0}
+.cg-small a{color:#8e6bff}
+.cg-cards{text-align:center;margin:8px 0}
+.cg-gcard{display:inline-block;vertical-align:top;width:132px;margin:6px;padding:12px 6px;border-radius:22px;text-decoration:none;color:#3d2f52;box-shadow:0 5px 0 rgba(61,47,82,.12);touch-action:manipulation}
+.cg-gcard:active{-webkit-transform:translateY(3px);transform:translateY(3px)}
+.cg-gcard .cg-gi{display:block;font-size:48px}
+.cg-gcard b{display:block;font-size:17px;margin-top:4px}
+.cg-gcard small{display:block;font-size:15px;color:#7a5200;margin-top:3px}
+
+/* Shared buttons and cards for new pages */
+.cg-btn{display:inline-block;min-height:54px;min-width:54px;border:0;border-radius:18px;padding:12px 22px;margin:6px;font:inherit;font-size:22px;font-weight:bold;line-height:30px;color:#fff;
+ background:#8e6bff;box-shadow:0 5px 0 rgba(0,0,0,.18);text-decoration:none;cursor:pointer;touch-action:manipulation;-webkit-transition:-webkit-transform .08s;transition:transform .08s}
+.cg-btn:active{-webkit-transform:translateY(3px);transform:translateY(3px);box-shadow:0 2px 0 rgba(0,0,0,.18)}
+.cg-btn[disabled]{opacity:.45}
+.cg-pink{background:#f0559b}.cg-green{background:#3cb371}.cg-orange{background:#ff9f43}.cg-blue{background:#4f8cff}.cg-gold{background:#f5b800;color:#4a3500}.cg-gray{background:#a49cb5}
+.cg-wide{display:block;margin:12px auto 4px;max-width:420px}
+.cg-card{background:#fff;border-radius:28px;box-shadow:0 8px 0 rgba(61,47,82,.10),0 14px 30px rgba(61,47,82,.10)}
+.cg-page{margin:0;min-height:100%;color:#3d2f52;font-family:"Arial Rounded MT Bold","Trebuchet MS","Geeza Pro","Noto Sans Arabic",Arial,sans-serif;
+ background:#fff6fb;background:-webkit-linear-gradient(top,#ffe8f3 0%,#f3ecff 55%,#e5f7ff 100%);background:linear-gradient(to bottom,#ffe8f3 0%,#f3ecff 55%,#e5f7ff 100%);
+ -webkit-user-select:none;user-select:none;-webkit-touch-callout:none;-webkit-text-size-adjust:100%;-webkit-tap-highlight-color:transparent}
+
+.cg-confetti{position:fixed;top:0;left:0;right:0;bottom:0;z-index:99;pointer-events:none;overflow:hidden}
+.cg-cf{position:absolute;top:-60px;font-size:36px;-webkit-animation:cgfall 2s ease-in forwards;animation:cgfall 2s ease-in forwards}
+@-webkit-keyframes cgfall{to{-webkit-transform:translateY(900px) rotate(320deg);opacity:.6}}
+@keyframes cgfall{to{transform:translateY(900px) rotate(320deg);opacity:.6}}
+
+/* CSS coin (same on every device) */
+.cg-c{display:inline-block;width:.95em;height:.95em;vertical-align:-.12em;border-radius:50%;background:#f5b800;background:-webkit-radial-gradient(35% 35%,circle,#fff3a6 0,#ffd23f 35%,#e6a100 100%);
+ background:radial-gradient(circle at 35% 35%,#fff3a6 0,#ffd23f 35%,#e6a100 100%);box-shadow:inset 0 0 0 .08em #c98a00,0 .04em 0 rgba(0,0,0,.2)}
+.cg-c-big{width:84px;height:84px}
+.cg-emo{display:inline-block;width:1em;height:1em;vertical-align:-.12em;margin:0 .04em;border:0}

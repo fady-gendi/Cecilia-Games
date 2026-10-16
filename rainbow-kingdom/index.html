@@ -1,0 +1,767 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Rainbow Kingdom">
+<meta name="theme-color" content="#fff0d9">
+<link rel="apple-touch-icon" href="../apple-touch-icon.png">
+<title>Rainbow Kingdom</title>
+<link rel="stylesheet" href="../shared/cecilia.css?v=31">
+<style>
+/* Rainbow Kingdom — the adventure game where Cecilia spends the coins she earns while learning.
+   Old-iPad safe: ES5 JavaScript, no CSS grid/variables/gap, Unicode 6 emoji only. */
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;height:100%;overflow:hidden}
+body{color:#3d2f52;font-family:"Arial Rounded MT Bold","Trebuchet MS",Arial,sans-serif;-webkit-user-select:none;user-select:none;-webkit-touch-callout:none;-webkit-text-size-adjust:100%;
+ background:#fff0d9;background:-webkit-linear-gradient(top,#ffe8f3 0%,#fff0d9 50%,#e5f7ff 100%);background:linear-gradient(to bottom,#ffe8f3 0%,#fff0d9 50%,#e5f7ff 100%)}
+button{font:inherit;color:inherit}
+#app{position:absolute;top:62px;left:0;right:0;bottom:0;overflow:hidden}
+.screen{position:absolute;top:0;left:0;right:0;bottom:0;display:none;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:10px 12px 14px}
+.screen.on{display:block}
+.row{display:-webkit-box;display:-webkit-flex;display:flex;-webkit-box-align:center;-webkit-align-items:center;align-items:center;-webkit-flex-wrap:wrap;flex-wrap:wrap}
+.center{-webkit-box-pack:center;-webkit-justify-content:center;justify-content:center}
+.grow{-webkit-box-flex:1;-webkit-flex:1;flex:1}
+.b{display:inline-block;min-height:56px;min-width:56px;border:0;border-radius:18px;padding:10px 18px;margin:5px;font-size:22px;font-weight:bold;line-height:34px;color:#fff;background:#8e6bff;
+ box-shadow:0 5px 0 rgba(0,0,0,.18);cursor:pointer;touch-action:manipulation;text-decoration:none;text-align:center;-webkit-transition:-webkit-transform .08s;transition:transform .08s}
+.b:active{-webkit-transform:translateY(3px);transform:translateY(3px);box-shadow:0 2px 0 rgba(0,0,0,.18)}
+.b.pink{background:#f0559b}.b.green{background:#3cb371}.b.orange{background:#ff9f43}.b.blue{background:#4f8cff}.b.gold{background:#f5b800;color:#4a3500}.b.gray{background:#a49cb5}.b.white{background:#fff;color:#3d2f52}
+.b.big{font-size:28px;padding:14px 30px;min-height:70px;line-height:42px}
+.b.pulse{-webkit-animation:pulse 1.2s infinite;animation:pulse 1.2s infinite}
+@-webkit-keyframes pulse{50%{-webkit-transform:scale(1.07)}}
+@keyframes pulse{50%{transform:scale(1.07)}}
+.pill{display:inline-block;background:#fff;border-radius:999px;padding:8px 16px;margin:4px;font-size:20px;font-weight:bold;box-shadow:0 3px 0 rgba(0,0,0,.08)}
+h1{font-size:34px;margin:6px 0;text-align:center}
+h2{font-size:28px;margin:6px 0}
+
+/* Title / story */
+#s-title{text-align:center;padding-top:16px}
+.logo{font-size:46px;font-weight:bold;color:#f0559b;margin:10px 0 0;text-shadow:0 3px 0 #fff}
+.story{max-width:760px;margin:12px auto;background:#fff;border-radius:30px;padding:18px;box-shadow:0 8px 0 rgba(61,47,82,.1)}
+.story .pic{font-size:120px;line-height:1.2;min-height:140px}
+.story p{font-size:28px;line-height:1.4;margin:10px 0}
+
+/* Map */
+.landhead{text-align:center}
+.landname{font-size:30px;font-weight:bold;margin:0 6px}
+.gems{display:inline-block;margin:2px 4px}
+.gem{display:inline-block;width:30px;height:30px;margin:4px 5px;-webkit-transform:rotate(45deg);transform:rotate(45deg);border-radius:6px;background:#ddd;border:3px solid #fff;box-shadow:0 2px 4px rgba(0,0,0,.2);vertical-align:middle}
+.gem.off{background:#e3dfe8!important;opacity:.7}
+.gem.rainbow{background:#f0559b;background:-webkit-linear-gradient(left,#ff4d6d,#ff9f43,#ffd23f,#3cb371,#4f8cff,#5b5bd6,#a35bd6);background:linear-gradient(to right,#ff4d6d,#ff9f43,#ffd23f,#3cb371,#4f8cff,#5b5bd6,#a35bd6)}
+.scene{position:relative;width:100%;max-width:1000px;margin:6px auto;border-radius:28px;overflow:hidden;box-shadow:0 8px 0 rgba(61,47,82,.12);border:4px solid #fff;background:#cde}
+.scene:before{content:'';display:block;padding-top:56%}
+.scene svg.bg{position:absolute;top:0;left:0;width:100%;height:100%}
+.layer{position:absolute;top:0;left:0;right:0;bottom:0}
+.decor span{position:absolute;font-size:44px;line-height:1;margin:-22px 0 0 -22px}
+.gray .decor,.gray .friendspot{-webkit-filter:grayscale(1);filter:grayscale(1);opacity:.75}
+.restore{-webkit-animation:restore 2.2s ease-out;animation:restore 2.2s ease-out}
+@-webkit-keyframes restore{0%{-webkit-filter:grayscale(1) brightness(.9)}60%{-webkit-filter:grayscale(0) brightness(1.25)}100%{-webkit-filter:none}}
+@keyframes restore{0%{filter:grayscale(1) brightness(.9)}60%{filter:grayscale(0) brightness(1.25)}100%{filter:none}}
+.node{position:absolute;width:76px;height:76px;margin:-38px 0 0 -38px;border-radius:50%;border:5px solid #fff;background:#8e6bff;color:#fff;font-size:30px;font-weight:bold;text-align:center;line-height:66px;
+ box-shadow:0 5px 0 rgba(0,0,0,.25);cursor:pointer;touch-action:manipulation;padding:0}
+.node.done{background:#f5b800}
+.node.lock{background:#b9b2c6;color:#efeaf5;font-size:24px}
+.node.next{background:#f0559b;-webkit-animation:pulse 1.2s infinite;animation:pulse 1.2s infinite}
+.node .nm{position:absolute;left:50%;top:76px;width:150px;margin-left:-75px;font-size:15px;line-height:18px;color:#3d2f52;background:#fff;border-radius:10px;padding:3px 4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.me{position:absolute;width:80px;height:120px;margin:-130px 0 0 -40px;pointer-events:none;-webkit-animation:hop 1.6s infinite;animation:hop 1.6s infinite}
+@-webkit-keyframes hop{50%{-webkit-transform:translateY(-8px)}}
+@keyframes hop{50%{transform:translateY(-8px)}}
+.friendspot{position:absolute;font-size:64px;margin:-32px 0 0 -32px;line-height:1}
+.arrow{width:64px;font-size:30px}
+.mapbtns{text-align:center;margin-top:4px}
+@media (orientation:portrait){.scene:before{padding-top:88%}.decor span{font-size:50px}}
+
+/* Level */
+#lvl{position:absolute;top:0;left:0;right:0;bottom:0;display:-webkit-box;display:-webkit-flex;display:flex;-webkit-box-orient:vertical;-webkit-flex-direction:column;flex-direction:column;padding:8px 10px}
+.lhead{-webkit-flex:0 0 auto;flex:0 0 auto}
+.lhead .t{font-size:24px;font-weight:bold;padding:0 6px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#lbody{-webkit-box-flex:1;-webkit-flex:1;flex:1;min-height:0;display:-webkit-box;display:-webkit-flex;display:flex;-webkit-box-orient:vertical;-webkit-flex-direction:column;flex-direction:column}
+#talk{-webkit-flex:0 0 auto;flex:0 0 auto;display:-webkit-box;display:-webkit-flex;display:flex;-webkit-box-align:center;-webkit-align-items:center;align-items:center;margin:4px 0 8px}
+.who{-webkit-flex:0 0 auto;flex:0 0 auto;width:96px;height:96px;border-radius:50%;background:#fff;border:4px solid #ffd6e8;text-align:center;font-size:62px;line-height:88px;box-shadow:0 4px 0 rgba(0,0,0,.08);position:relative}
+.who svg{width:80px;height:80px;margin-top:4px}
+.who small{position:absolute;bottom:-14px;left:50%;width:110px;margin-left:-55px;font-size:14px;line-height:18px;background:#3d2f52;color:#fff;border-radius:9px}
+.bubble{-webkit-box-flex:1;-webkit-flex:1;flex:1;position:relative;margin-left:16px;background:#fff;border-radius:26px;padding:14px 64px 14px 18px;font-size:27px;line-height:1.35;min-height:80px;box-shadow:0 5px 0 rgba(61,47,82,.08)}
+.bubble:before{content:'';position:absolute;left:-14px;top:30px;border-width:12px 16px 12px 0;border-style:solid;border-color:transparent #fff transparent transparent}
+.speak{position:absolute;right:8px;top:50%;margin-top:-26px;width:52px;height:52px;border:0;border-radius:26px;background:#e8f1ff;font-size:26px;cursor:pointer;touch-action:manipulation;padding:0}
+#board{-webkit-box-flex:1;-webkit-flex:1;flex:1;min-height:250px;position:relative;background:#fff;background:rgba(255,255,255,.75);border-radius:28px;border:4px solid #fff;overflow:hidden;box-shadow:0 6px 0 rgba(61,47,82,.08)}
+.lfoot{-webkit-flex:0 0 auto;flex:0 0 auto;margin-top:6px}
+.dots i{display:inline-block;width:16px;height:16px;border-radius:8px;background:#e3dbef;margin:0 4px}
+.dots i.on{background:#f0559b}.dots i.ok{background:#3cb371}
+@media (orientation:landscape) and (min-width:800px){
+ #lbody{-webkit-box-orient:horizontal;-webkit-flex-direction:row;flex-direction:row}
+ #talk{width:34%;-webkit-box-orient:vertical;-webkit-flex-direction:column;flex-direction:column;-webkit-box-pack:center;-webkit-justify-content:center;justify-content:center;margin:0 10px 0 0}
+ .who{width:130px;height:130px;font-size:84px;line-height:120px}
+ .who svg{width:110px;height:110px}
+ .bubble{margin:22px 0 0 0;width:100%;-webkit-box-flex:0;-webkit-flex:0 0 auto;flex:0 0 auto}
+ .bubble:before{left:50%;top:-14px;margin-left:-12px;border-width:0 12px 16px 12px;border-color:transparent transparent #fff transparent}
+}
+/* Mechanics */
+.bc{position:absolute;top:0;left:0;right:0;bottom:0;text-align:center}
+.goal{position:absolute;top:8px;left:0;right:0;text-align:center;z-index:5;pointer-events:none}
+.goal span{display:inline-block;background:#fff;border-radius:999px;padding:6px 16px;font-size:24px;font-weight:bold;box-shadow:0 3px 0 rgba(0,0,0,.08)}
+.thing{position:absolute;width:76px;height:76px;margin:-38px 0 0 -38px;font-size:54px;line-height:76px;text-align:center;border:0;background:transparent;padding:0;cursor:pointer;touch-action:manipulation;-webkit-transition:all .4s;transition:all .4s}
+.thing.got{-webkit-transform:scale(1.6);transform:scale(1.6);opacity:0}
+.wiggle{-webkit-animation:wig .4s;animation:wig .4s}
+@-webkit-keyframes wig{25%{-webkit-transform:rotate(-14deg)}75%{-webkit-transform:rotate(14deg)}}
+@keyframes wig{25%{transform:rotate(-14deg)}75%{transform:rotate(14deg)}}
+.glow{-webkit-animation:glow 1s 4;animation:glow 1s 4;border-radius:50%}
+@-webkit-keyframes glow{50%{background:#fff27a;box-shadow:0 0 0 12px #fff27a;-webkit-transform:scale(1.25)}}
+@keyframes glow{50%{background:#fff27a;box-shadow:0 0 0 12px #fff27a;transform:scale(1.25)}}
+.cards{position:absolute;top:50px;left:6px;right:6px;bottom:6px;text-align:center}
+.card{display:inline-block;vertical-align:top;width:104px;height:116px;margin:6px;border-radius:20px;border:0;background:#8e6bff;color:#fff;font-size:56px;line-height:116px;box-shadow:0 5px 0 rgba(0,0,0,.15);cursor:pointer;touch-action:manipulation;padding:0}
+.card.up{background:#fff;color:#3d2f52;border:4px solid #d9ccff;line-height:108px}
+.card.ok{background:#e9fbe9;border:4px solid #3cb371;line-height:108px}
+.pat{margin-top:56px;font-size:58px;line-height:1.3}
+.pat .q{display:inline-block;width:76px;height:76px;border-radius:18px;border:4px dashed #f0559b;color:#f0559b;font-size:48px;line-height:68px;vertical-align:middle}
+.opts{margin-top:18px}
+.opt{width:100px;height:100px;font-size:60px;line-height:90px;border-radius:24px;border:0;background:#fff;box-shadow:0 5px 0 rgba(0,0,0,.15);margin:8px;cursor:pointer;touch-action:manipulation;padding:0}
+.bigtap{position:absolute;left:50%;top:52%;width:220px;height:220px;margin:-110px 0 0 -110px;border-radius:50%;border:0;background:#fff7d6;font-size:130px;line-height:220px;cursor:pointer;touch-action:manipulation;box-shadow:0 8px 0 rgba(0,0,0,.1);padding:0}
+.bar2{position:absolute;left:12%;right:12%;bottom:18px;height:24px;border-radius:12px;background:#ece6f5;overflow:hidden}
+.bar2 i{display:block;height:100%;width:0;background:#3cb371;border-radius:12px;-webkit-transition:width .3s;transition:width .3s}
+.drop{position:absolute;font-size:48px;pointer-events:none;-webkit-transition:all .6s ease-in;transition:all .6s ease-in}
+.float{position:absolute;bottom:-90px;width:84px;height:84px;margin-left:-42px;font-size:60px;line-height:84px;text-align:center;border:0;background:transparent;padding:0;cursor:pointer;touch-action:manipulation;-webkit-transition:-webkit-transform 5s linear;transition:transform 5s linear}
+.bins{position:absolute;left:0;right:0;bottom:10px;text-align:center}
+.bin{display:inline-block;vertical-align:bottom;width:42%;max-width:260px;min-height:130px;margin:0 2%;border-radius:24px;border:4px dashed #b7a6d8;background:#f6f1ff;font-size:24px;font-weight:bold;padding:8px;cursor:pointer;touch-action:manipulation}
+.bin .in{font-size:34px;min-height:44px}
+.bin.hot{border-color:#f0559b;background:#ffe8f3}
+.tray{position:absolute;left:0;right:0;top:56px;text-align:center}
+.tray .thing{position:relative;display:inline-block;margin:6px;top:auto;left:auto;background:#fff;border-radius:20px;box-shadow:0 4px 0 rgba(0,0,0,.1)}
+.tray .thing.sel{background:#fff27a;-webkit-transform:scale(1.15);transform:scale(1.15)}
+.num{position:absolute;width:80px;height:80px;margin:-40px 0 0 -40px;border-radius:50%;border:5px solid #fff;background:#4f8cff;color:#fff;font-size:34px;font-weight:bold;line-height:70px;text-align:center;box-shadow:0 5px 0 rgba(0,0,0,.2);cursor:pointer;touch-action:manipulation;padding:0}
+.num.emo{background:#fff;font-size:46px;color:#3d2f52}
+.num.ok{background:#3cb371;color:#fff}
+.recipe{position:absolute;top:52px;left:0;right:0;text-align:center;font-size:40px}
+.recipe span{display:inline-block;margin:0 6px;padding:2px 8px;border-radius:14px;background:#fff}
+.recipe span.ok{background:#c9f0b5}
+.dark{position:absolute;top:0;left:0;right:0;bottom:0;pointer-events:none;z-index:4}
+.shopitem{position:absolute;left:50%;top:50%;width:300px;margin:-150px 0 0 -150px;text-align:center}
+.shopitem .e{font-size:110px;line-height:1.15}
+.shopitem .n{font-size:28px;font-weight:bold}
+.price{display:inline-block;background:#fff4d6;border-radius:999px;padding:6px 16px;font-size:24px;font-weight:bold;color:#7a5200;margin:6px}
+.need{font-size:22px;margin:6px 0}
+.gemfx{position:absolute;left:50%;top:50%;width:150px;height:150px;margin:-75px 0 0 -75px;-webkit-transform:rotate(45deg);transform:rotate(45deg);border-radius:26px;border:8px solid #fff;box-shadow:0 0 40px #fff27a;cursor:pointer;-webkit-animation:pulse 1.2s infinite;animation:pulse 1.2s infinite}
+
+/* Shop + Home */
+.tabs{text-align:center;margin:4px 0 8px}
+.tab{display:inline-block;margin:4px;padding:10px 16px;border-radius:16px;background:#fff;font-size:21px;font-weight:bold;border:0;box-shadow:0 3px 0 rgba(0,0,0,.1);cursor:pointer;touch-action:manipulation}
+.tab.on{background:#ffd23f}
+.shelf{text-align:center}
+.it{display:inline-block;vertical-align:top;width:150px;margin:7px;padding:10px 6px 12px;border-radius:24px;background:#fff;box-shadow:0 5px 0 rgba(61,47,82,.1);cursor:pointer;touch-action:manipulation;position:relative}
+.it .e{font-size:58px;line-height:1.2;min-height:70px}
+.it .n{font-size:17px;font-weight:bold;min-height:40px}
+.it.own{background:#effbe9}
+.it.want{border:4px solid #f0559b}
+.it.lock{opacity:.5}
+.it .tag{position:absolute;top:-6px;right:-4px;background:#f0559b;color:#fff;font-size:14px;border-radius:10px;padding:2px 8px}
+.swatch{display:inline-block;width:56px;height:56px;border-radius:50%;border:4px solid #fff;box-shadow:0 2px 6px rgba(0,0,0,.25)}
+.house{position:relative;width:100%;max-width:900px;margin:6px auto;border-radius:28px;overflow:hidden;border:4px solid #fff;box-shadow:0 8px 0 rgba(61,47,82,.12)}
+.house:before{content:'';display:block;padding-top:58%}
+.slot{position:absolute;font-size:50px;line-height:1;margin:-25px 0 0 -25px}
+.slot.empty{opacity:.25;font-size:30px;margin:-15px 0 0 -15px}
+.mebig{position:absolute;left:44%;bottom:6%;width:15%;height:44%}
+.petbig{position:absolute;left:58%;bottom:7%;font-size:54px}
+.fr{position:absolute;bottom:5%;font-size:48px}
+.wear{text-align:center}
+.wear .it{width:120px}
+.wear .it.on{border:4px solid #3cb371}
+.end{font-size:26px;line-height:1.4}
+</style>
+</head>
+<body data-cg-game="rk">
+<div id="app">
+ <div class="screen" id="s-title"></div>
+ <div class="screen" id="s-map"></div>
+ <div class="screen" id="s-level"><div id="lvl"></div></div>
+ <div class="screen" id="s-shop"></div>
+ <div class="screen" id="s-home"></div>
+</div>
+<script src="../shared/cecilia.js?v=31"></script>
+<script>
+(function(){'use strict';
+/* =====================================================================
+   RAINBOW KINGDOM — story, items and levels are plain data (edit freely).
+   Coins can ONLY be earned in the learning games. Here they are spent.
+   Emoji: Unicode 6.0 only, so a 2012 iPad can draw them.
+   ===================================================================== */
+var W=CeciliaWallet,UI=CeciliaUI,COIN=UI.coin,SOURCE='littleworld',PROFILE='cecilia_little_world',KEY='rainbow_kingdom_v1';
+var PRICE_SCALE=1; /* make everything cheaper (0.5) or dearer (2) in one place */
+
+var ITEMS={
+ /* quest items: needed to finish levels */
+ cake:{e:'🍰',n:'Picnic cake',p:20,k:'quest'},hammer:{e:'🔨',n:'Hammer',p:25,k:'quest'},key1:{e:'🔑',n:'Garden key',p:35,k:'quest'},
+ hay:{e:'🌾',n:'Hay',p:30,k:'quest'},fuel:{e:'⛽',n:'Tractor fuel',p:40,k:'quest'},torch:{e:'🔦',n:'Flashlight',p:45,k:'quest'},
+ umbrella:{e:'🌂',n:'Umbrella',p:45,k:'quest'},honey:{e:'🍯',n:'Honey pot',p:50,k:'quest'},balloon:{e:'🎈',n:'Balloon',p:60,k:'quest'},
+ lantern:{e:'🏮',n:'Lantern',p:60,k:'quest'},bike:{e:'🚲',n:'Bike',p:70,k:'quest'},music:{e:'🎶',n:'Music box',p:70,k:'quest'},key2:{e:'🔑',n:'Gold key',p:80,k:'quest'},
+ boat:{e:'⛵',n:'Boat',p:90,k:'quest'},rod:{e:'🎣',n:'Fishing rod',p:100,k:'quest'},
+ boots:{e:'👢',n:'Snow boots',p:100,k:'quest'},tophat:{e:'🎩',n:'Snowman hat',p:100,k:'quest'},fish:{e:'🐟',n:'Fish',p:110,k:'quest'},orb:{e:'🔮',n:'Magic ball',p:120,k:'quest'},
+ milk:{e:'🍼',n:'Milk',p:120,k:'quest'},gift:{e:'🎁',n:'Gift box',p:130,k:'quest'},key3:{e:'🔑',n:'Candy key',p:140,k:'quest'},
+ rocket:{e:'🚀',n:'Rocket',p:160,k:'quest'},bell:{e:'🔔',n:'Magic bell',p:170,k:'quest'},bigcake:{e:'🎂',n:'Big cake',p:180,k:'quest'},party:{e:'🎉',n:'Party pack',p:200,k:'quest'},
+ /* clothes (dress colors) */
+ d_pink:{e:'👗',n:'Pink dress',p:0,k:'dress',c:'#ff7eb6'},d_blue:{e:'👗',n:'Sky dress',p:40,k:'dress',c:'#62b6ff'},d_yellow:{e:'👗',n:'Sun dress',p:40,k:'dress',c:'#ffd23f'},
+ d_green:{e:'👗',n:'Leaf dress',p:60,k:'dress',c:'#4fd18b',land:2},d_purple:{e:'👗',n:'Grape dress',p:80,k:'dress',c:'#a77bff',land:3},d_red:{e:'👗',n:'Berry dress',p:90,k:'dress',c:'#ff4d6d',land:4},
+ d_rainbow:{e:'🌈',n:'Rainbow dress',p:250,k:'dress',c:'rainbow',land:6},
+ /* hats */
+ h_bow:{e:'🎀',n:'Bow',p:30,k:'hat'},h_flower:{e:'🌸',n:'Flower',p:35,k:'hat'},h_sun:{e:'👒',n:'Sun hat',p:60,k:'hat',land:2},h_top:{e:'🎩',n:'Top hat',p:70,k:'hat',land:4},
+ h_crown:{e:'👑',n:'Crown',p:300,k:'hat',land:7},
+ /* pets follow Cecilia */
+ p_cat:{e:'🐱',n:'Kitten',p:90,k:'pet'},p_dog:{e:'🐶',n:'Puppy',p:90,k:'pet'},p_hamster:{e:'🐹',n:'Hamster',p:70,k:'pet'},p_turtle:{e:'🐢',n:'Turtle',p:140,k:'pet',land:4},
+ p_penguin:{e:'🐧',n:'Penguin',p:180,k:'pet',land:5},p_panda:{e:'🐼',n:'Panda',p:220,k:'pet',land:6},p_dragon:{e:'🐲',n:'Baby dragon',p:400,k:'pet',land:7},
+ /* home decorations (each has its own spot in the tree house) */
+ o_tulip:{e:'🌷',n:'Tulips',p:25,k:'home',x:12,y:80},o_balloons:{e:'🎈',n:'Balloons',p:30,k:'home',x:20,y:22},o_lamp:{e:'🏮',n:'Lamp',p:40,k:'home',x:36,y:30},
+ o_art:{e:'🎨',n:'Paints',p:50,k:'home',x:66,y:44,land:1},o_books:{e:'📚',n:'Books',p:50,k:'home',x:28,y:52,land:1},o_guitar:{e:'🎸',n:'Guitar',p:80,k:'home',x:80,y:60,land:2},
+ o_tree:{e:'🎄',n:'Little tree',p:90,k:'home',x:90,y:78,land:3},o_piano:{e:'🎹',n:'Piano',p:140,k:'home',x:72,y:78,land:4},o_fountain:{e:'⛲',n:'Fountain',p:220,k:'home',x:28,y:82,land:5},
+ o_carousel:{e:'🎠',n:'Carousel',p:260,k:'home',x:6,y:56,land:6},o_wheel:{e:'🎡',n:'Big wheel',p:320,k:'home',x:92,y:30,land:7},o_castle:{e:'🏰',n:'Castle',p:400,k:'home',x:52,y:14,land:7}
+};
+
+var TW={n:'Twinkle',star:1}; /* Twinkle the star is Cecilia's helper */
+var LANDS=[
+ {id:'meadow',n:'Strawberry Meadow',gem:'#ff4d6d',gemName:'red',friend:{n:'Lulu',e:'🐰'},
+  pal:{s1:'#ffd6e0',s2:'#fff4f7',h1:'#9be38f',h2:'#6fd17d',h3:'#4fb86a',p:'#ffe3b0'},decor:['🌸','🍓','🌷','🌹','🐞','🌸','🍓','🌼','🌷'],
+  levels:[
+  {n:'Sad Flowers',s:[{t:'say',w:'f',x:'Hi! I am Lulu the bunny.'},{t:'say',w:'f',x:'Grumpy Cloud took all the colors!'},{t:'say',w:'f',x:'My flower is sad. Can you help?'},
+    {t:'tap',e:['🌱','🌿','🌷','🌹'],tool:'💧',n:6,x:'Tap the flower to water it!'},{t:'say',w:'f',x:'Wow! A red rose! Thank you!'}]},
+  {n:'Picnic Time',s:[{t:'say',w:'f',x:'Let us have a picnic!'},{t:'find',e:'🍓',n:5,d:['🌸','🌿','🍃','🌼','🍀'],x:'Find 5 strawberries 🍓'},
+    {t:'buy',i:'cake',x:'We need a cake 🍰 too!'},{t:'say',w:'f',x:'Yum! The best picnic ever!'}]},
+  {n:'Lost Ladybugs',s:[{t:'say',w:'f',x:'My ladybug friends are lost.'},{t:'catch',e:'🐞',n:6,x:'Tap the ladybugs 🐞'},{t:'say',w:'f',x:'You found them all!'}]},
+  {n:'Broken Bridge',s:[{t:'say',w:'f',x:'Oh no! The bridge is broken.'},{t:'buy',i:'hammer',x:'We need a hammer 🔨'},{t:'order',n:5,x:'Fix the bridge. Tap 1, 2, 3, 4, 5.'},{t:'say',w:'f',x:'The bridge is fixed! Hooray!'}]},
+  {n:'The Red Gem',s:[{t:'say',w:'f',x:'The red gem is in my garden.'},{t:'say',w:'f',x:'But the gate is locked! 🔒'},{t:'buy',i:'key1',x:'Buy the key 🔑'},
+    {t:'match',p:['🌸','🌷','🌹','🌻'],x:'Find the pairs to open the gate.'},{t:'gem'}]}
+ ]},
+ {id:'farm',n:'Pumpkin Farm',gem:'#ff9f43',gemName:'orange',friend:{n:'Pip',e:'🐷'},
+  pal:{s1:'#ffe0b8',s2:'#fff7ea',h1:'#e8d36b',h2:'#c9b450',h3:'#a8c95a',p:'#e9b97a'},decor:['🎃','🌾','🐔','🍊','🚜','🌾','🎃','🐮','🌻'],
+  levels:[
+  {n:'Little Chicks',s:[{t:'say',w:'f',x:'Hello! I am Pip the pig.'},{t:'say',w:'f',x:'My little chicks ran away!'},{t:'find',e:'🐥',n:6,d:['🌾','🍂','🐔','🌻','🍃'],x:'Find 6 chicks 🐥'},{t:'say',w:'f',x:'Peep peep! Thank you!'}]},
+  {n:'Hungry Cow',s:[{t:'say',w:{n:'Moo',e:'🐮'},x:'Moo! I am so hungry.'},{t:'buy',i:'hay',x:'I need some hay 🌾'},{t:'say',w:{n:'Moo',e:'🐮'},x:'Munch munch. Yummy!'}]},
+  {n:'Fruit and Veggies',s:[{t:'say',w:'f',x:'Let us sort the food!'},{t:'sort',b:[{l:'Fruit',e:'🍎',i:['🍎','🍌','🍇','🍓']},{l:'Veggie',e:'🌽',i:['🌽','🍆','🍠']}],x:'Put each food in the right box.'},{t:'say',w:'f',x:'Good job! You are so smart!'}]},
+  {n:'Tractor Time',s:[{t:'say',w:'f',x:'My tractor 🚜 has no fuel.'},{t:'buy',i:'fuel',x:'Buy fuel ⛽ for the tractor.'},
+    {t:'pattern',q:['🎃','🍊','🎃','🍊','🎃'],a:'🍊',o:['🍊','🍎','🌽'],x:'What comes next?'},{t:'pattern',q:['🐔','🐔','🐷','🐔','🐔'],a:'🐷',o:['🐮','🐷','🐔'],x:'What comes next?'},{t:'say',w:'f',x:'Vroom vroom! Let us go!'}]},
+  {n:'The Orange Gem',s:[{t:'say',w:'f',x:'The orange gem is in the barn.'},{t:'say',w:'f',x:'But the barn is very dark!'},{t:'buy',i:'torch',x:'Buy a flashlight 🔦'},
+    {t:'dark',e:'💎',d:['🐔','🐭','🌾','🎃','🐮','🐑'],x:'Move your finger to look. Find the gem!'},{t:'gem'}]}
+ ]},
+ {id:'hills',n:'Honey Hills',gem:'#ffd23f',gemName:'yellow',friend:{n:'Bobo',e:'🐻'},
+  pal:{s1:'#fff3b0',s2:'#fffbe6',h1:'#c8e66b',h2:'#a6d45a',h3:'#8cc14f',p:'#ffd98a'},decor:['🌻','🐝','🍯','🌼','🌻','🐝','🌼','🍯','🌻'],
+  levels:[
+  {n:'Busy Bees',s:[{t:'say',w:'f',x:'Hi! I am Bobo the bear.'},{t:'say',w:'f',x:'The bees flew away. Help me!'},{t:'catch',e:'🐝',n:7,x:'Tap the bees 🐝'},{t:'say',w:'f',x:'Buzz buzz! The bees are home.'}]},
+  {n:'Sunny Field',s:[{t:'say',w:'f',x:'It is so hot today!'},{t:'buy',i:'umbrella',x:'Buy an umbrella 🌂 for shade.'},{t:'find',e:'🌻',n:7,d:['🌼','🍃','🐝','🌿'],x:'Find 7 sunflowers 🌻'},{t:'say',w:'f',x:'What a sunny, happy field!'}]},
+  {n:'Honey Pots',s:[{t:'say',w:'f',x:'I want honey for my mom.'},{t:'order',n:6,e:'🍯',x:'Tap the honey pots 1 to 6.'},{t:'buy',i:'honey',x:'Buy the big honey pot 🍯'},{t:'say',w:'f',x:'Mom will be so happy!'}]},
+  {n:'Bee Song',s:[{t:'say',w:{n:'Bizzy',e:'🐝'},x:'Can you sing my bee song?'},{t:'pattern',q:['🐝','🌼','🐝','🌼','🐝'],a:'🌼',o:['🌻','🌼','🐝'],x:'What comes next?'},
+    {t:'pattern',q:['🌻','🌻','🐝','🌻','🌻'],a:'🐝',o:['🐝','🌻','🍯'],x:'What comes next?'},{t:'pattern',q:['🍯','🐻','🍯','🐻','🍯'],a:'🐻',o:['🍯','🐝','🐻'],x:'What comes next?'},{t:'say',w:{n:'Bizzy',e:'🐝'},x:'Buzz! You sing so well!'}]},
+  {n:'The Yellow Gem',s:[{t:'say',w:'f',x:'The yellow gem is up in the sky!'},{t:'buy',i:'balloon',x:'Fly up with a balloon 🎈'},{t:'match',p:['🐝','🌻','🍯','🐻','🌼'],x:'Find the pairs!'},{t:'gem'}]}
+ ]},
+ {id:'forest',n:'Whisper Forest',gem:'#3cb371',gemName:'green',friend:{n:'Fifi',e:'🐸'},
+  pal:{s1:'#c9f0d8',s2:'#effcf3',h1:'#5cbf6e',h2:'#3f9e58',h3:'#2f8a4a',p:'#c7a477'},decor:['🌲','🍄','🌳','🍀','🌲','🐌','🍄','🌳','🍃'],
+  levels:[
+  {n:'Dark Woods',s:[{t:'say',w:'f',x:'Hi! I am Fifi the frog.'},{t:'say',w:'f',x:'The forest is so dark.'},{t:'buy',i:'lantern',x:'Buy a lantern 🏮'},{t:'find',e:'🍄',n:6,d:['🌲','🍀','🍂','🌰','🌿'],x:'Find 6 mushrooms 🍄'},{t:'say',w:'f',x:'Ribbit! Now I can see!'}]},
+  {n:'Lily Pads',s:[{t:'say',w:'f',x:'Let us jump on the lily pads!'},{t:'order',n:7,x:'Jump! Tap 1 to 7.'},{t:'say',w:'f',x:'Ribbit! You jump so well!'}]},
+  {n:'Snail Mail',s:[{t:'say',w:{n:'Sami',e:'🐌'},x:'I have a letter. But I am so slow!'},{t:'buy',i:'bike',x:'A bike 🚲 will be fast!'},{t:'tap',e:['🏠','🏡','💌'],tool:'🚲',n:5,x:'Tap to ride to the house!'},{t:'say',w:{n:'Sami',e:'🐌'},x:'The letter is home. Thank you!'}]},
+  {n:'Sleepy Dragon',s:[{t:'say',w:'f',x:'Shh! A dragon 🐲 is sleeping.'},{t:'say',w:'f',x:'It sleeps on our path.'},{t:'buy',i:'music',x:'Play soft music 🎶'},{t:'catch',e:'✨',n:8,x:'Catch the sparkles ✨'},{t:'say',w:{n:'Dragon',e:'🐲'},x:'Yawn... OK. You can pass!'}]},
+  {n:'The Green Gem',s:[{t:'say',w:'f',x:'The green gem is in the old tree.'},{t:'match',p:['🌲','🍄','🍀','🐸','🌰','🐌'],x:'Find the pairs!'},{t:'buy',i:'key2',x:'Buy the gold key 🔑'},{t:'gem'}]}
+ ]},
+ {id:'beach',n:'Shell Beach',gem:'#4f8cff',gemName:'blue',friend:{n:'Tilly',e:'🐢'},
+  pal:{s1:'#bfe6ff',s2:'#effaff',h1:'#ffe7a8',h2:'#5ab8f0',h3:'#3a9be0',p:'#fff1c9'},decor:['🌴','🐚','🌊','🐠','🌴','⛵','🐚','🐳','🌊'],
+  levels:[
+  {n:'Seashells',s:[{t:'say',w:'f',x:'Hi! I am Tilly the turtle.'},{t:'say',w:'f',x:'I love shells. Find some for me!'},{t:'find',e:'🐚',n:7,d:['🌴','🐠','🌊','⭐','🐟'],x:'Find 7 shells 🐚'},{t:'say',w:'f',x:'So pretty! Thank you!'}]},
+  {n:'Across the Sea',s:[{t:'say',w:'f',x:'The gem island is far away.'},{t:'buy',i:'boat',x:'We need a boat ⛵'},
+    {t:'pattern',q:['🌊','⛵','🌊','⛵','🌊'],a:'⛵',o:['🐳','⛵','🌊'],x:'What comes next?'},{t:'pattern',q:['🐟','🐠','🐟','🐠','🐟'],a:'🐠',o:['🐠','🐙','🐟'],x:'What comes next?'},{t:'say',w:'f',x:'Sail away! Hooray!'}]},
+  {n:'Fish Friends',s:[{t:'say',w:{n:'Dolly',e:'🐬'},x:'Hi! I am Dolly the dolphin.'},{t:'say',w:{n:'Dolly',e:'🐬'},x:'My fish friends are playing hide and seek.'},{t:'catch',e:'🐠',n:8,x:'Tap the fish 🐠'},{t:'say',w:{n:'Dolly',e:'🐬'},x:'You found them all!'}]},
+  {n:'Octopus Colors',s:[{t:'say',w:{n:'Otto',e:'🐙'},x:'I mixed up my toys!'},{t:'sort',b:[{l:'Red',e:'❤',i:['🍎','🍓','🌹','🍒']},{l:'Blue',e:'💙',i:['🐳','💧','🌀','💙']}],x:'Put red things and blue things in the right box.'},{t:'say',w:{n:'Otto',e:'🐙'},x:'Eight arms say thank you!'}]},
+  {n:'The Blue Gem',s:[{t:'say',w:'f',x:'The blue gem is under the water!'},{t:'buy',i:'rod',x:'Buy a fishing rod 🎣'},{t:'tap',e:['🌊','🌊','📦'],tool:'🎣',n:6,x:'Pull, pull, pull!'},{t:'order',n:4,x:'Open the box. Tap 1, 2, 3, 4.'},{t:'gem'}]}
+ ]},
+ {id:'snow',n:'Snowy Mountain',gem:'#5b5bd6',gemName:'indigo',friend:{n:'Pingo',e:'🐧'},
+  pal:{s1:'#c9cdf5',s2:'#f2f3ff',h1:'#ffffff',h2:'#dfe6fb',h3:'#c3cff3',p:'#b3c1ea'},decor:['❄','⛄','🌲','⭐','❄','🌙','🌲','❄','⛄'],
+  levels:[
+  {n:'Cold Feet',s:[{t:'say',w:'f',x:'Hi! I am Pingo the penguin.'},{t:'say',w:'f',x:'Brrr! The mountain is cold.'},{t:'buy',i:'boots',x:'Buy warm boots 👢'},{t:'order',n:8,x:'Climb up! Tap 1 to 8.'},{t:'say',w:'f',x:'You are a great climber!'}]},
+  {n:'Snowman',s:[{t:'say',w:'f',x:'Let us make a snowman!'},{t:'tap',e:['❄','❄','⛄'],tool:'❄',n:6,x:'Tap to roll the snow!'},{t:'buy',i:'tophat',x:'A hat 🎩 for the snowman!'},{t:'say',w:{n:'Snowman',e:'⛄'},x:'I love my new hat!'}]},
+  {n:'Snowflakes',s:[{t:'say',w:'f',x:'Look! Snowflakes are falling.'},{t:'catch',e:'❄',n:9,x:'Catch the snowflakes ❄'},{t:'say',w:'f',x:'So many! So pretty!'}]},
+  {n:'Fish for Pingo',s:[{t:'say',w:'f',x:'I am hungry. I want a fish!'},{t:'pattern',q:['🐧','🐟','🐧','🐟','🐧'],a:'🐟',o:['🐧','⛄','🐟'],x:'What comes next?'},
+    {t:'pattern',q:['❄','⛄','⛄','❄','⛄'],a:'⛄',o:['⛄','❄','🌲'],x:'What comes next?'},{t:'buy',i:'fish',x:'Buy a fish 🐟 for Pingo.'},{t:'say',w:'f',x:'Yummy! Thank you!'}]},
+  {n:'The Indigo Gem',s:[{t:'say',w:'f',x:'The indigo gem is stuck in ice!'},{t:'buy',i:'orb',x:'The magic ball 🔮 can melt ice.'},{t:'tap',e:['❄','❄','💧'],tool:'🔮',n:8,x:'Tap to melt the ice!'},{t:'gem'}]}
+ ]},
+ {id:'candy',n:'Candy Town',gem:'#a35bd6',gemName:'violet',friend:{n:'Mimi',e:'🐱'},
+  pal:{s1:'#efd3ff',s2:'#fdf4ff',h1:'#ffb3d9',h2:'#d9a3ff',h3:'#b98af0',p:'#fff0f8'},decor:['🍭','🍬','🍩','🍰','🍭','🍇','🍪','🍬','🍦'],
+  levels:[
+  {n:'Candy Shop',s:[{t:'say',w:'f',x:'Hi! I am Mimi the cat.'},{t:'say',w:'f',x:'I make sweets. I lost my candy!'},{t:'find',e:'🍬',n:8,d:['🍭','🍩','🍪','🍫','🍦'],x:'Find 8 candies 🍬'},{t:'say',w:'f',x:'Sweet! Thank you!'}]},
+  {n:'Birthday Cake',s:[{t:'say',w:'f',x:'Let us bake a cake!'},{t:'buy',i:'milk',x:'First, buy milk 🍼'},{t:'order',r:['🍼','🍳','🍫','🍓'],x:'Follow the recipe. Tap in order!'},{t:'say',w:'f',x:'Mmm! It smells so good!'}]},
+  {n:'Lollipop Road',s:[{t:'say',w:'f',x:'Follow the lollipop road!'},{t:'pattern',q:['🍭','🍬','🍭','🍬','🍭'],a:'🍬',o:['🍩','🍬','🍭'],x:'What comes next?'},
+    {t:'pattern',q:['🍩','🍩','🍪','🍩','🍩'],a:'🍪',o:['🍪','🍩','🍰'],x:'What comes next?'},{t:'pattern',q:['🍰','🍦','🍫','🍰','🍦'],a:'🍫',o:['🍦','🍰','🍫'],x:'What comes next?'},{t:'say',w:'f',x:'You are a pattern star!'}]},
+  {n:'Grape Party',s:[{t:'say',w:'f',x:'My mom has a party today.'},{t:'catch',e:'🍇',n:10,x:'Catch the grapes 🍇'},{t:'buy',i:'gift',x:'Buy a gift 🎁 for my mom.'},{t:'say',w:'f',x:'She will love it!'}]},
+  {n:'The Violet Gem',s:[{t:'say',w:'f',x:'The violet gem is in the candy castle.'},{t:'match',p:['🍭','🍬','🍩','🍪','🍫','🍰'],x:'Find the pairs!'},{t:'buy',i:'key3',x:'Buy the candy key 🔑'},{t:'gem'}]}
+ ]},
+ {id:'castle',n:'Cloud Castle',gem:'rainbow',gemName:'rainbow',friend:{n:'Cloudy',e:'☁'},
+  pal:{s1:'#d7e3ff',s2:'#fff6fb',h1:'#ffffff',h2:'#f3ecff',h3:'#e5dcff',p:'#ffe8f3'},decor:['☁','⭐','🌙','🏰','✨','☁','⭐','✨','☁'],
+  levels:[
+  {n:'Up to the Clouds',s:[{t:'say',w:TW,x:'You have 7 gems! Wow!'},{t:'say',w:TW,x:'Now we go up to Cloud Castle.'},{t:'buy',i:'rocket',x:'Buy a rocket 🚀 to fly up!'},{t:'catch',e:'⭐',n:10,x:'Catch the stars ⭐'},{t:'say',w:TW,x:'We are in the clouds!'}]},
+  {n:'Cloud Stairs',s:[{t:'say',w:TW,x:'Look! Big cloud stairs.'},{t:'order',n:10,x:'Climb! Tap 1 to 10.'},{t:'say',w:TW,x:'We are at the castle!'}]},
+  {n:'The Song Door',s:[{t:'say',w:TW,x:'The door has a song lock.'},{t:'pattern',q:['❤','💛','❤','💛','❤'],a:'💛',o:['💙','💛','💚'],x:'What comes next?'},
+    {t:'pattern',q:['💚','💙','💜','💚','💙'],a:'💜',o:['💜','❤','💚'],x:'What comes next?'},{t:'buy',i:'bell',x:'Ring the magic bell 🔔'},{t:'say',w:TW,x:'The door is open!'}]},
+  {n:'Grumpy Cloud',s:[{t:'say',w:'f',x:'Go away! Grrr!'},{t:'say',w:TW,x:'He looks sad. Let us be kind.'},{t:'buy',i:'bigcake',x:'Give him a big cake 🎂'},{t:'say',w:'f',x:'For me? Nobody gives me cake.'},
+    {t:'say',w:'f',x:'I took the colors because I was alone.'},{t:'say',w:TW,x:'You can be our friend!'}]},
+  {n:'The Rainbow Party',s:[{t:'say',w:'f',x:'I am sorry. I will give the colors back.'},{t:'buy',i:'party',x:'Buy a party pack 🎉'},{t:'tap',e:['☁','☁','🌈'],tool:'💎',n:7,x:'Tap the cloud with the gems!'},{t:'gem'}]}
+ ]}
+];
+
+/* ===================== state + saving ===================== */
+function fresh(){return {game:'rainbow',v:1,ts:0,total:0,done:{},given:{},seen:{},cur:null,wear:{dress:'d_pink',hat:'',pet:''},land:0}}
+function count(o){var n=0,k;for(k in o)if(o[k])n++;return n}
+function calcTotal(s){return count(s.done)*10+count(s.given)+count(s.seen)}
+function merge(a,b){
+ var r=fresh(),k,newer=(b&&b.ts>(a&&a.ts||0))?b:a;
+ [a,b].forEach(function(s){if(!s||s.game!=='rainbow')return;['done','given','seen'].forEach(function(f){for(k in s[f]||{})if(s[f][k])r[f][k]=s[f][k]})});
+ if(newer&&newer.game==='rainbow'){r.cur=newer.cur||null;r.wear=Object.assign(r.wear,newer.wear||{});r.land=newer.land||0}
+ r.ts=Math.max(a&&a.ts||0,b&&b.ts||0);r.total=calcTotal(r);return r;
+}
+var S=(function(){try{var s=JSON.parse(localStorage.getItem(KEY));if(s&&s.game==='rainbow')return merge(s,null)}catch(e){}return fresh()})();
+var cloudForce=false,cloudTimer=null,cloudBusy=false,cloudReady=false;
+function save(){S.ts=new Date().getTime();S.total=calcTotal(S);try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){}clearTimeout(cloudTimer);cloudTimer=setTimeout(cloudSave,2500)}
+function cloudSave(){
+ if(!cloudReady||cloudBusy){clearTimeout(cloudTimer);cloudTimer=setTimeout(cloudSave,5000);return}
+ cloudBusy=true;
+ CeciliaCloud.save(PROFILE,S,cloudForce).then(function(r){
+  cloudBusy=false;
+  if(r.ok){cloudForce=false;return}
+  if(r.state&&r.state.game==='rainbow'){S=merge(S,r.state);S.ts=new Date().getTime()+1;try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){}cloudTimer=setTimeout(cloudSave,500)}
+  else{cloudForce=true;cloudTimer=setTimeout(cloudSave,500)} /* an old Little World save is replaced once */
+ })['catch'](function(){cloudBusy=false;cloudTimer=setTimeout(cloudSave,20000)});
+}
+function cloudLoad(){
+ CeciliaCloud.load(PROFILE).then(function(r){
+  cloudReady=true;var cs=r&&r.state;
+  if(cs&&cs.game==='rainbow'){var before=S.total;S=merge(S,cs);try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){}if(S.total!==before&&cur==='map')renderMap()}
+  else if(cs)cloudForce=true;
+  if(!cs||S.ts>=(cs.ts||0))cloudSave();
+ })['catch'](function(){cloudReady=true;setTimeout(cloudLoad,30000)});
+}
+CeciliaCloud.onReconnect(function(){if(!cloudReady)cloudLoad();else cloudSave()});
+
+/* ===================== coins + things she owns ===================== */
+function price(id){return Math.max(0,Math.round(ITEMS[id].p*PRICE_SCALE))}
+function ownedMap(){
+ var m={d_pink:1};
+ W.purchases(SOURCE).forEach(function(e){if(e.meta&&e.meta.type==='adv'&&e.status!=='rejected'&&ITEMS[e.meta.item])m[e.meta.item]=1});
+ return m;
+}
+function owns(id){return !!ownedMap()[id]||price(id)===0}
+function buy(id){
+ if(owns(id))return true;
+ var tries=0,tx;
+ W.purchases(SOURCE).forEach(function(e){if(e.meta&&e.meta.item===id)tries++});
+ tx='adv:item:'+id+(tries?':'+tries:'');
+ if(!W.spend(price(id),SOURCE,ITEMS[id].n,tx,{type:'adv',item:id}))return false;
+ UI.sound('win');return true;
+}
+function coinsHTML(n){return '<span class="price">'+n+' '+COIN+'</span>'}
+
+/* ===================== helpers ===================== */
+function $(id){return document.getElementById(id)}
+function esc(s){return UI.esc(s)}
+function rnd(n){return Math.floor(Math.random()*n)}
+function shuffle(a){a=a.slice();for(var i=a.length-1;i>0;i--){var j=rnd(i+1),t=a[i];a[i]=a[j];a[j]=t}return a}
+/* fast, reliable taps on old iPads: touchend with a click fallback */
+function onTap(node,fn){
+ var sx=0,sy=0,moved=false,last=0;
+ node.addEventListener('touchstart',function(e){var t=e.touches[0];sx=t.clientX;sy=t.clientY;moved=false},false);
+ node.addEventListener('touchmove',function(e){var t=e.touches[0];if(Math.abs(t.clientX-sx)>12||Math.abs(t.clientY-sy)>12)moved=true},false);
+ node.addEventListener('touchend',function(e){if(moved)return;last=new Date().getTime();e.preventDefault();fn(e)},false);
+ node.addEventListener('click',function(e){if(new Date().getTime()-last<700)return;fn(e)},false);
+}
+function lid(li,vi){return (li+1)+'-'+(vi+1)}
+function levelAt(id){var p=id.split('-');return {li:+p[0]-1,vi:+p[1]-1,land:LANDS[+p[0]-1],lv:LANDS[+p[0]-1].levels[+p[1]-1]}}
+function gemDone(li){return !!S.done[lid(li,4)]}
+function landOpen(li){return li===0||gemDone(li-1)}
+function levelOpen(li,vi){return landOpen(li)&&(vi===0||!!S.done[lid(li,vi-1)])}
+function nextLevel(){for(var li=0;li<LANDS.length;li++)for(var vi=0;vi<5;vi++)if(!S.done[lid(li,vi)])return {li:li,vi:vi};return null}
+function gemCount(){var n=0;for(var i=0;i<LANDS.length;i++)if(gemDone(i))n++;return n}
+function gemsHTML(){var h='<span class="gems">';LANDS.forEach(function(L,i){h+='<i class="gem'+(L.gem==='rainbow'?' rainbow':'')+(gemDone(i)?'':' off')+'" style="background:'+(L.gem==='rainbow'?'':L.gem)+'"></i>'});return h+'</span>'}
+function gray(h){var r=parseInt(h.substr(1,2),16),g=parseInt(h.substr(3,2),16),b=parseInt(h.substr(5,2),16),y=Math.round(.3*r+.59*g+.11*b);y=Math.round(y*.75+50);
+ function x(v){v=Math.max(0,Math.min(255,v));return (v<16?'0':'')+v.toString(16)}return '#'+x(y)+x(y)+x(y+10)}
+
+/* Cecilia, drawn from named anchor points (one side drawn, the other mirrored). */
+var uidN=0;
+function cecilia(wear){
+ wear=wear||S.wear;var d=ITEMS[wear.dress]||ITEMS.d_pink,id='g'+(uidN++),fill=d.c==='rainbow'?'url(#'+id+')':d.c,hat=wear.hat&&ITEMS[wear.hat]?ITEMS[wear.hat].e:'';
+ var A={sh:[78,150],hand:[58,206],hip:[88,228],foot:[88,276]};
+ function side(m){var f=function(x){return m?200-x:x};
+  return '<path d="M'+f(A.sh[0])+' '+A.sh[1]+' L'+f(A.hand[0])+' '+A.hand[1]+'" stroke="#e8b48f" stroke-width="16" stroke-linecap="round"/>'+
+   '<circle cx="'+f(A.hand[0])+'" cy="'+A.hand[1]+'" r="9" fill="#f6c9a8"/>'+
+   '<path d="M'+f(A.hip[0])+' '+A.hip[1]+' L'+f(A.foot[0])+' '+(A.foot[1]-6)+'" stroke="#f6c9a8" stroke-width="15" stroke-linecap="round"/>'+
+   '<ellipse cx="'+f(A.foot[0]-3*(m?-1:1))+'" cy="'+A.foot[1]+'" rx="15" ry="8" fill="#e0457f"/>'+
+   '<circle cx="'+f(84)+'" cy="88" r="6" fill="#3d2f52"/><circle cx="'+f(82)+'" cy="86" r="2" fill="#fff"/><circle cx="'+f(76)+'" cy="104" r="7" fill="#ffb3c7" opacity=".7"/>';}
+ return '<svg viewBox="0 0 200 300" xmlns="http://www.w3.org/2000/svg">'+
+  (d.c==='rainbow'?'<defs><linearGradient id="'+id+'" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ff4d6d"/><stop offset=".3" stop-color="#ffd23f"/><stop offset=".6" stop-color="#3cb371"/><stop offset="1" stop-color="#5b5bd6"/></linearGradient></defs>':'')+
+  '<path d="M52 80 Q48 170 62 186 L138 186 Q152 170 148 80 Z" fill="#7a4a2a"/>'+side(false)+side(true)+
+  '<path d="M80 146 L120 146 L150 236 Q100 248 50 236 Z" fill="'+fill+'" stroke="#fff" stroke-width="3"/>'+
+  '<circle cx="100" cy="90" r="50" fill="#f6c9a8"/>'+
+  '<path d="M50 92 Q52 36 100 36 Q148 36 150 92 Q132 62 104 58 Q80 70 50 92 Z" fill="#8a5631"/>'+
+  '<path d="M88 112 Q100 122 112 112" stroke="#c0466f" stroke-width="4" fill="none" stroke-linecap="round"/>'+
+  (hat?'<text x="100" y="54" font-size="56" text-anchor="middle">'+hat+'</text>':'')+'</svg>';
+}
+function twinkle(){return '<svg viewBox="0 0 100 100"><path d="M50 4 L62 36 L96 38 L69 59 L79 93 L50 73 L21 93 L31 59 L4 38 L38 36 Z" fill="#ffd23f" stroke="#f5b800" stroke-width="4" stroke-linejoin="round"/>'+
+ '<circle cx="40" cy="50" r="5" fill="#3d2f52"/><circle cx="60" cy="50" r="5" fill="#3d2f52"/><path d="M41 62 Q50 70 59 62" stroke="#3d2f52" stroke-width="4" fill="none" stroke-linecap="round"/><circle cx="33" cy="60" r="5" fill="#ffadc6"/><circle cx="67" cy="60" r="5" fill="#ffadc6"/></svg>'}
+function whoHTML(w,land){
+ if(w==='f')w=land.friend;
+ if(w&&w.star)return '<div class="who">'+twinkle()+'<small>Twinkle</small></div>';
+ return '<div class="who">'+w.e+'<small>'+esc(w.n)+'</small></div>';
+}
+
+/* ===================== screens ===================== */
+var cur='title';
+function show(name){cur=name;['title','map','level','shop','home'].forEach(function(n){$('s-'+n).className='screen'+(n===name?' on':'')});stopTimers();UI.close()}
+var timers=[];function later(fn,ms){timers.push(setTimeout(fn,ms))}function every(fn,ms){timers.push(setInterval(fn,ms))}
+function stopTimers(){timers.forEach(function(t){clearTimeout(t);clearInterval(t)});timers=[]}
+
+/* --- story intro (first time) --- */
+var STORY=[
+ {p:'🏰🌈',x:'This is the Rainbow Kingdom.'},
+ {p:'☁😠',x:'Oh no! Grumpy Cloud took all the colors!'},
+ {p:'💎',x:'Help the friends. Find the 7 magic gems.'},
+ {p:'TW',x:'Hi Cecilia! I am Twinkle. I will help you!'},
+ {p:'💡',x:'Stuck? Tap the light 💡 for a clue.'},
+ {p:'COIN',x:'You need coins to buy things.'},
+ {p:'📚',x:'Play the learning games to earn coins!'},
+ {p:'🌈',x:'Let us bring the colors back!'}
+];
+function renderTitle(i){
+ show('title');i=i||0;var s=STORY[i],pic=s.p==='TW'?'<div style="width:120px;height:120px;margin:auto">'+twinkle()+'</div>':(s.p==='COIN'?'<i class="cg-c" style="width:100px;height:100px"></i>':s.p);
+ var h='<div class="logo">Rainbow Kingdom</div><div class="story"><div class="pic">'+pic+'</div><p>'+esc(s.x)+'</p>'+
+  '<button class="b white" id="tSay">🔊</button> <button class="b pink big pulse" id="tNext">'+(i<STORY.length-1?'Next ▶':'Start! ▶')+'</button></div>'+
+  (i===0&&S.seen.intro?'<button class="b gray" id="tSkip">Skip ▶▶</button>':'');
+ $('s-title').innerHTML=h;UI.say(s.x);
+ onTap($('tSay'),function(){UI.say(s.x)});
+ onTap($('tNext'),function(){UI.sound('tap');if(i<STORY.length-1)renderTitle(i+1);else{S.seen.intro=1;save();renderMap()}});
+ if($('tSkip'))onTap($('tSkip'),function(){renderMap()});
+}
+
+/* --- map --- */
+var NODES=[[13,80],[32,64],[51,76],[69,58],[86,34]];
+function sceneHTML(L,li,colored,extra){
+ var c=L.pal,g=function(h){return colored?h:gray(h)},id='s'+(uidN++),pts=NODES,path='M'+pts[0][0]*10+' '+pts[0][1]*6,i;
+ for(i=1;i<pts.length;i++){var a=pts[i-1],b=pts[i];path+=' Q'+((a[0]+b[0])*5)+' '+(Math.max(a[1],b[1])*6+40)+' '+b[0]*10+' '+b[1]*6}
+ var h='<svg class="bg" viewBox="0 0 1000 600" preserveAspectRatio="none"><defs><linearGradient id="'+id+'" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="'+g(c.s1)+'"/><stop offset="1" stop-color="'+g(c.s2)+'"/></linearGradient></defs>'+
+  '<rect width="1000" height="600" fill="url(#'+id+')"/>'+
+  '<path d="M0 300 Q200 200 420 280 T1000 240 L1000 600 L0 600 Z" fill="'+g(c.h1)+'"/>'+
+  '<path d="M0 400 Q300 320 600 390 T1000 360 L1000 600 L0 600 Z" fill="'+g(c.h2)+'"/>'+
+  '<path d="M0 500 Q260 440 520 490 T1000 470 L1000 600 L0 600 Z" fill="'+g(c.h3)+'"/>'+
+  '<path d="'+path+'" stroke="'+g(c.p)+'" stroke-width="44" fill="none" stroke-linecap="round" opacity=".95"/>'+
+  '<path d="'+path+'" stroke="#fff" stroke-width="6" stroke-dasharray="14 18" fill="none" opacity=".7"/></svg>';
+ var spots=[[8,30],[26,42],[44,25],[62,38],[80,62],[93,58],[22,90],[60,92],[40,52]];
+ h+='<div class="layer decor">';L.decor.forEach(function(e,k){h+='<span style="left:'+spots[k][0]+'%;top:'+spots[k][1]+'%">'+e+'</span>'});h+='</div>';
+ h+='<div class="layer">'+(extra||'')+'</div>';
+ return h;
+}
+function renderMap(li){
+ show('map');
+ if(li===undefined){var nx=nextLevel();li=nx?nx.li:LANDS.length-1;if(S.land!==undefined&&landOpen(S.land)&&S.land<li)li=S.land}
+ li=Math.max(0,Math.min(LANDS.length-1,li));S.land=li;
+ var L=LANDS[li],open=landOpen(li),colored=gemDone(li),restoreNow=window._restore===li;window._restore=-1;
+ var nodes='',nxt=nextLevel(),meAt=null;
+ L.levels.forEach(function(lv,vi){
+  var id=lid(li,vi),done=!!S.done[id],op=levelOpen(li,vi),isNext=nxt&&nxt.li===li&&nxt.vi===vi;
+  if(isNext||(!meAt&&done&&vi===4))meAt=NODES[vi];
+  nodes+='<button class="node'+(done?' done':(op?(isNext?' next':''):' lock'))+'" data-v="'+vi+'" style="left:'+NODES[vi][0]+'%;top:'+NODES[vi][1]+'%">'+(done?'⭐':(op?(vi===4?'💎':vi+1):'🔒'))+'<span class="nm">'+esc(lv.n)+'</span></button>';
+ });
+ if(!meAt&&open)meAt=NODES[0];
+ var pet=S.wear.pet&&ITEMS[S.wear.pet]?'<span class="friendspot" style="left:'+(meAt?meAt[0]+5:0)+'%;top:'+(meAt?meAt[1]-4:0)+'%;font-size:40px">'+ITEMS[S.wear.pet].e+'</span>':'';
+ var me=meAt?'<div class="me" style="left:'+meAt[0]+'%;top:'+meAt[1]+'%">'+cecilia()+'</div>'+pet:'';
+ var friend=colored?'<span class="friendspot" style="left:92%;top:16%">'+L.friend.e+'</span>':'';
+ var h='<div class="landhead row center"><button class="b white arrow" id="mPrev"'+(li?'':' disabled')+'>◀</button><span class="landname">'+esc(L.n)+'</span><button class="b white arrow" id="mNext"'+(li<LANDS.length-1?'':' disabled')+'>▶</button></div>'+
+  '<div style="text-align:center">'+gemsHTML()+' <span class="pill">'+gemCount()+' / 8 gems</span></div>'+
+  '<div class="scene'+(colored?'':' gray')+(restoreNow?' restore':'')+'" id="scene">'+sceneHTML(L,li,colored||restoreNow,(open?nodes+me:'')+friend)+
+  (open?'':'<div class="layer" style="background:rgba(255,255,255,.55);text-align:center;padding-top:16%"><div style="font-size:70px">🔒</div><div style="font-size:26px;font-weight:bold">Find the '+LANDS[li-1].gemName+' gem first!</div></div>')+'</div>'+
+  '<div class="mapbtns">'+(nxt?'<button class="b pink big pulse" id="mPlay">▶ Play</button>':'<button class="b gold big" id="mEnd">🌈 The End</button>')+
+  '<button class="b orange" id="mShop">🏪 Shop</button><button class="b green" id="mHome">🏡 My Home</button><button class="b blue" id="mStory">📖 Story</button></div>';
+ $('s-map').innerHTML=h;
+ onTap($('mPrev'),function(){if(li)renderMap(li-1)});onTap($('mNext'),function(){if(li<LANDS.length-1)renderMap(li+1)});
+ var btns=$('s-map').querySelectorAll('.node');for(var i=0;i<btns.length;i++)(function(b){onTap(b,function(){var v=+b.getAttribute('data-v');
+  if(!levelOpen(li,v)){UI.sound('oops');UI.toast(v?'Finish level '+v+' first!':'Find the gem in the last land first!');return}startLevel(lid(li,v))})})(btns[i]);
+ if($('mPlay'))onTap($('mPlay'),function(){var n=nextLevel();startLevel(lid(n.li,n.vi))});
+ if($('mEnd'))onTap($('mEnd'),ending);
+ onTap($('mShop'),function(){renderShop()});onTap($('mHome'),function(){renderHome()});onTap($('mStory'),function(){renderTitle(0)});
+ if(restoreNow){UI.confetti(26);UI.say('The colors are back in '+L.n+'!');UI.toast('🌈 The colors are back!',3000)}
+ save();
+}
+
+/* --- level player --- */
+var P=null; /* {id,li,vi,land,lv,step,clues} */
+function startLevel(id){
+ var a=levelAt(id);P={id:id,li:a.li,vi:a.vi,land:a.land,lv:a.lv,step:0,clues:0};
+ if(S.cur&&S.cur.id===id&&!S.done[id])P.step=Math.min(S.cur.step,a.lv.s.length-1);
+ show('level');
+ $('lvl').innerHTML='<div class="lhead row"><button class="b gray" id="lBack">⬅</button><div class="t grow">'+esc(a.land.n)+' · '+(a.vi+1)+'. '+esc(a.lv.n)+'</div>'+
+  '<button class="b white" id="lSnd">'+(UI.muted()?'🔇':'🔊')+'</button><button class="b gold" id="lClue">💡 Clue</button></div>'+
+  '<div id="lbody"><div id="talk"></div><div id="board"></div></div><div class="lfoot row"><div class="dots grow" id="dots"></div><button class="b orange" id="lShop">🏪 Shop</button></div>';
+ onTap($('lBack'),function(){renderMap(P.li)});
+ onTap($('lSnd'),function(){UI.muted(!UI.muted());$('lSnd').innerHTML=UI.muted()?'🔇':'🔊';if(UI.muted()&&window.speechSynthesis)speechSynthesis.cancel()});
+ onTap($('lClue'),clue);onTap($('lShop'),function(){renderShop(true)});
+ runStep();
+}
+function talk(w,text){
+ $('talk').innerHTML=whoHTML(w,P.land)+'<div class="bubble">'+esc(text)+'<button class="speak" id="lSay">🔊</button></div>';
+ onTap($('lSay'),function(){UI.say(text)});UI.say(text);
+}
+function dots(){var h='';for(var i=0;i<P.lv.s.length;i++)h+='<i class="'+(i<P.step?'ok':(i===P.step?'on':''))+'"></i>';$('dots').innerHTML=h}
+var M=null; /* current mechanic: {clue:fn} */
+function runStep(){
+ stopTimers();M=null;P.clues=0;P.shown=P.step;var st=P.lv.s[P.step];
+ S.cur={id:P.id,step:P.step};save();dots();
+ var B=$('board');B.innerHTML='';
+ var fn=MECH[st.t];fn(st,B);
+}
+function stepDone(){
+ UI.sound('pop');P.step++;
+ if(P.step>=P.lv.s.length){levelDone();return}
+ later(runStep,450);
+}
+function levelDone(){
+ var first=!S.done[P.id];S.done[P.id]=new Date().getTime();S.cur=null;save();UI.sound('win');UI.confetti();
+ var isGem=P.vi===4,L=P.land,nx=nextLevel();
+ var h='<div class="cg-big">'+(isGem?'💎':'⭐')+'</div><h2>'+(isGem?'You found the '+esc(L.gemName)+' gem!':'Level done!')+'</h2>'+
+  '<p>'+(isGem?esc(L.friend.n)+' '+L.friend.e+' will live in your home now!':'Great job, Cecilia!')+'</p>'+
+  (nx?'<button class="b pink big" id="dNext">Next ▶</button>':'')+'<button class="b white" id="dMap">📍 Map</button>';
+ var text=isGem?'You found the '+L.gemName+' gem! Great job, Cecilia!':'Level done! Great job, Cecilia!';
+ if(isGem&&first)window._restore=P.li;
+ if(P.li===7&&isGem){ending();return}
+ var c=UI.modal(h,function(){renderMap(P.li)});UI.say(text);
+ if($('dNext'))onTap($('dNext'),function(){var n=nextLevel();UI.close();if(n.li!==P.li&&isGem){renderMap(P.li)}else startLevel(lid(n.li,n.vi))});
+ onTap($('dMap'),function(){UI.close();renderMap(P.li)});
+}
+function clue(){
+ P.clues++;UI.sound('tap');var st=P.lv.s[P.step],text=(M&&M.clue)?M.clue(P.clues):'Tap Next to go on.';
+ talk(TW,text);
+}
+
+/* --- the mechanics. Each draws in the board and calls stepDone() when finished. --- */
+function goal(B,text){var g=document.createElement('div');g.className='goal';g.innerHTML='<span>'+text+'</span>';B.appendChild(g);return g}
+function spots(n,top){ /* n random spots spread over a grid, in % */
+ var cells=[],cols=6,rows=4,r,c;for(r=0;r<rows;r++)for(c=0;c<cols;c++)cells.push([11+c*15.6+rnd(4)-2,(top||24)+r*((92-(top||24))/rows)+rnd(6)]);
+ return shuffle(cells).slice(0,n);
+}
+var MECH={
+ say:function(st,B){
+  talk(st.w,st.x);
+  B.innerHTML='<div class="bc" style="padding-top:12%"><div style="font-size:90px">'+(st.w==='f'?P.land.friend.e:(st.w.star?'⭐':st.w.e))+'</div><button class="b pink big pulse" id="sNext">Next ▶</button></div>';
+  onTap($('sNext'),stepDone);M={clue:function(){return 'Tap the pink Next button.'}};
+ },
+ find:function(st,B){
+  talk(P.land.friend,st.x);var left=st.n,pos=spots(st.n+Math.min(12,st.d.length*3)),g=goal(B,'Find: '+st.e+' 0 / '+st.n),things=[];
+  pos.forEach(function(p,i){var b=document.createElement('button');b.className='thing';var target=i<st.n;b.innerHTML=target?st.e:st.d[i%st.d.length];
+   b.style.left=p[0]+'%';b.style.top=p[1]+'%';b.style.fontSize=(target?44:50)+rnd(10)+'px';var rot=rnd(50)-25;b.style.webkitTransform=b.style.transform='rotate('+rot+'deg)';
+   if(target)things.push(b);B.appendChild(b);
+   onTap(b,function(){if(!target){b.className='thing wiggle';later(function(){b.className='thing'},420);return}
+    if(b.getAttribute('data-got'))return;b.setAttribute('data-got','1');b.className='thing got';left--;UI.sound('pop');
+    g.innerHTML='<span>Find: '+st.e+' '+(st.n-left)+' / '+st.n+'</span>';if(!left)later(stepDone,500)});
+  });
+  M={clue:function(k){var rest=things.filter(function(t){return !t.getAttribute('data-got')});if(rest[0]){rest[0].className='thing glow';later(function(){if(!rest[0].getAttribute('data-got'))rest[0].className='thing'},4200)}
+   return k<2?'Look closely! Tap every '+st.e+'. Look at the shining one!':'There is one! It is shining. Tap it!'}};
+ },
+ catch:function(st,B){
+  talk(P.land.friend,st.x);var got=0,g=goal(B,st.e+' 0 / '+st.n),live=0,slow=0;
+  function spawn(){
+   if(got>=st.n||live>=4)return;live++;var f=document.createElement('button');f.className='float';f.innerHTML=st.e;f.style.left=(10+rnd(80))+'%';
+   var dur=(5.5+slow)+'s';f.style.webkitTransitionDuration=f.style.transitionDuration=dur;B.appendChild(f);
+   var h=B.clientHeight+180;later(function(){f.style.webkitTransform=f.style.transform='translateY(-'+h+'px)'},40);
+   later(function(){if(f.parentNode){f.parentNode.removeChild(f);live--}},(5.6+slow)*1000);
+   onTap(f,function(){if(f.getAttribute('data-got'))return;f.setAttribute('data-got','1');got++;live--;UI.sound('pop');
+    var r=f.getBoundingClientRect(),br=B.getBoundingClientRect();f.style.webkitTransition=f.style.transition='none';f.style.webkitTransform=f.style.transform='none';
+    f.style.bottom='auto';f.style.top=(r.top-br.top)+'px';later(function(){f.style.webkitTransition=f.style.transition='all .4s';f.className='float got';f.style.opacity=0;f.style.webkitTransform=f.style.transform='scale(1.8)'},20);
+    later(function(){if(f.parentNode)f.parentNode.removeChild(f)},500);
+    g.innerHTML='<span>'+st.e+' '+got+' / '+st.n+'</span>';if(got>=st.n)later(stepDone,500)});
+  }
+  spawn();every(spawn,1100);
+  M={clue:function(k){if(k>1)slow=3;return k>1?'I made them slow! Tap each '+st.e+'.':'Watch the '+st.e+' fly up. Tap it fast!'}};
+ },
+ tap:function(st,B){
+  talk(P.land.friend,st.x);var n=0,stages=st.e;
+  B.innerHTML='<button class="bigtap" id="tBig">'+stages[0]+'</button><div class="bar2"><i id="tBar"></i></div>';goal(B,'Tap! '+st.tool);
+  var big=$('tBig');
+  onTap(big,function(e){if(n>=st.n)return;n++;UI.sound('tap');
+   var d=document.createElement('div');d.className='drop';d.innerHTML=st.tool;d.style.left=(30+rnd(40))+'%';d.style.top='10%';B.appendChild(d);
+   later(function(){d.style.top='45%';d.style.opacity=0},20);later(function(){if(d.parentNode)d.parentNode.removeChild(d)},700);
+   var si=Math.min(stages.length-1,Math.floor(n/st.n*(stages.length-1)+.0001));big.innerHTML=stages[si];
+   big.className='bigtap wiggle';later(function(){big.className='bigtap'},420);$('tBar').style.width=(n/st.n*100)+'%';
+   if(n>=st.n){big.innerHTML=stages[stages.length-1];later(stepDone,700)}});
+  M={clue:function(){big.className='bigtap glow';return 'Tap the big '+stages[0]+' again and again!'}};
+ },
+ order:function(st,B){
+  talk(P.land.friend,st.x);var list=st.r||[],n=st.r?st.r.length:st.n,next=0,pos=spots(n,st.r?44:22),nums=[];
+  if(st.r){var rc=document.createElement('div');rc.className='recipe';rc.id='rec';rc.innerHTML=st.r.map(function(e){return '<span>'+e+'</span>'}).join('➡');B.appendChild(rc)}
+  else goal(B,'Tap 1, 2, 3...');
+  for(var i=0;i<n;i++)(function(i){var b=document.createElement('button');b.className='num'+(st.r?' emo':'');b.innerHTML=st.r?list[i]:(st.e?'<span style="font-size:24px">'+st.e+'</span>'+(i+1):(i+1));
+   b.style.left=pos[i][0]+'%';b.style.top=pos[i][1]+'%';B.appendChild(b);nums.push(b);
+   onTap(b,function(){if(i<next)return;if(i!==next){b.className='num'+(st.r?' emo':'')+' wiggle';UI.sound('oops');later(function(){b.className='num'+(st.r?' emo':'')},420);return}
+    b.className='num ok';UI.sound('pop');if(st.r){var sp=$('rec').getElementsByTagName('span');sp[i].className='ok'}next++;if(next>=n)later(stepDone,500)})})(i);
+  M={clue:function(){var b=nums[next];if(b){b.className='num'+(st.r?' emo':'')+' glow'}return st.r?'Tap the '+list[next]+' next. It is shining!':'Tap number '+(next+1)+' next. It is shining!'}};
+ },
+ pattern:function(st,B){
+  talk(TW,st.x);
+  var h='<div class="bc"><div class="pat">'+st.q.join(' ')+' <span class="q">?</span></div><div class="opts">';st.o.forEach(function(o,i){h+='<button class="opt" data-i="'+i+'">'+o+'</button>'});
+  B.innerHTML=h+'</div></div>';var bs=B.querySelectorAll('.opt'),ok=false;
+  for(var i=0;i<bs.length;i++)(function(b){onTap(b,function(){if(ok)return;var o=st.o[+b.getAttribute('data-i')];
+   if(o===st.a){ok=true;B.querySelector('.q').innerHTML=o;B.querySelector('.q').style.borderStyle='solid';UI.sound('pop');later(stepDone,700)}
+   else{b.className='opt wiggle';UI.sound('oops');later(function(){b.className='opt'},420)}})})(bs[i]);
+  M={clue:function(k){var s=st.q.slice(0,2).join(' then ');if(k>1){for(var i=0;i<bs.length;i++)if(st.o[i]===st.a)bs[i].className='opt glow'}
+   return k>1?'The answer is shining. Tap it!':'Say it out loud: '+s+'... What comes next?'}};
+ },
+ match:function(st,B){
+  talk(P.land.friend,st.x);goal(B,'Find two the same!');
+  var deck=shuffle(st.p.concat(st.p)),wrap=document.createElement('div'),open=[],done=0,lock=false,cards=[];wrap.className='cards';B.appendChild(wrap);
+  if(B.clientWidth<520||deck.length>10)wrap.style.zoom=deck.length>10?.85:1;
+  deck.forEach(function(e,i){var c=document.createElement('button');c.className='card';c.innerHTML='⭐';wrap.appendChild(c);cards.push(c);
+   onTap(c,function(){if(lock||c.className!=='card')return;c.className='card up';c.innerHTML=e;UI.sound('tap');open.push({c:c,e:e});
+    if(open.length===2){lock=true;var a=open[0],b=open[1];open=[];
+     if(a.e===b.e){later(function(){a.c.className=b.c.className='card ok';lock=false;done++;UI.sound('pop');if(done===st.p.length)later(stepDone,600)},350)}
+     else later(function(){a.c.className=b.c.className='card';a.c.innerHTML=b.c.innerHTML='⭐';lock=false},900)}})});
+  M={clue:function(k){if(k>1&&!lock){lock=true;cards.forEach(function(c,i){if(c.className==='card'){c.innerHTML=deck[i];c.className='card up'}});
+    later(function(){cards.forEach(function(c){if(c.className==='card up'){c.className='card';c.innerHTML='⭐'}});lock=false},1800)}
+   return k>1?'Peek! Look fast and remember!':'Tap two cards. Find two the same!'}};
+ },
+ sort:function(st,B){
+  talk(P.land.friend,st.x);var all=[],sel=null,left=0;
+  st.b.forEach(function(bin,bi){bin.i.forEach(function(e){all.push({e:e,bi:bi})})});all=shuffle(all);left=all.length;
+  var tray=document.createElement('div');tray.className='tray';B.appendChild(tray);goal(B,'Tap a food, then tap a box.');
+  var bins=document.createElement('div');bins.className='bins';B.appendChild(bins);var binEls=[];
+  st.b.forEach(function(bin,bi){var d=document.createElement('div');d.className='bin';d.innerHTML=bin.e+' '+esc(bin.l)+'<div class="in"></div>';bins.appendChild(d);binEls.push(d);
+   onTap(d,function(){if(!sel){UI.toast('First tap a thing at the top!');return}
+    if(sel.it.bi===bi){d.querySelector('.in').innerHTML+=sel.it.e;sel.el.parentNode.removeChild(sel.el);sel=null;left--;UI.sound('pop');binEls.forEach(function(x){x.className='bin'});if(!left)later(stepDone,500)}
+    else{d.className='bin wiggle';UI.sound('oops');later(function(){d.className='bin'},420)}})});
+  all.forEach(function(it){var b=document.createElement('button');b.className='thing';b.innerHTML=it.e;tray.appendChild(b);
+   onTap(b,function(){if(sel)sel.el.className='thing';sel={el:b,it:it};b.className='thing sel';UI.sound('tap')})});
+  M={clue:function(){var it=sel?sel.it:null,el;if(!it){el=tray.querySelector('.thing');if(!el)return '';el.className='thing glow';return 'Tap a thing at the top first.'}
+   binEls[it.bi].className='bin hot';return it.e+' goes in the '+st.b[it.bi].l+' box. Tap the pink box!'}};
+ },
+ dark:function(st,B){
+  talk(P.land.friend,st.x);var pos=spots(1+st.d.length*2,20),found=false,target;
+  pos.forEach(function(p,i){var b=document.createElement('button');b.className='thing';b.innerHTML=i===0?st.e:st.d[i%st.d.length];b.style.left=p[0]+'%';b.style.top=p[1]+'%';B.appendChild(b);
+   if(i===0)target=b;onTap(b,function(){if(i!==0){b.className='thing wiggle';later(function(){b.className='thing'},420);return}if(found)return;found=true;b.className='thing got';dk.style.background='transparent';UI.sound('win');later(stepDone,700)})});
+  var dk=document.createElement('div');dk.className='dark';B.appendChild(dk);var R=110;
+  function light(x,y){var g='circle '+R+'px at '+x+'px '+y+'px';dk.style.background='-webkit-radial-gradient('+x+'px '+y+'px, circle, rgba(0,0,20,0) '+(R-20)+'px, rgba(0,0,20,.94) '+R+'px)';
+   dk.style.background='radial-gradient('+g+', rgba(0,0,20,0) '+(R-30)+'px, rgba(0,0,20,.94) '+R+'px)';
+   if(dk.style.background.indexOf('radial')<0)dk.style.background='-webkit-radial-gradient('+x+'px '+y+'px, circle, rgba(0,0,20,0) '+(R-20)+'px, rgba(0,0,20,.94) '+R+'px)'}
+  function at(e){var t=e.touches?e.touches[0]:e,r=B.getBoundingClientRect();if(!t)return;light(t.clientX-r.left,t.clientY-r.top)}
+  B.addEventListener('touchmove',function(e){at(e);e.preventDefault()},false);B.addEventListener('touchstart',at,false);B.addEventListener('mousemove',at,false);
+  light(B.clientWidth/2,B.clientHeight/2);
+  M={clue:function(k){if(k>1){R=190}var r=target.getBoundingClientRect(),br=B.getBoundingClientRect();if(k>2)light(r.left-br.left+38,r.top-br.top+38);return k>1?'I made the light bigger! Look for '+st.e:'Move your finger around. Look for '+st.e}};
+ },
+ buy:function(st,B){
+  var it=ITEMS[st.i],have=owns(st.i),given=S.given[P.id+':'+st.i];
+  talk(P.land.friend,st.x);
+  function draw(){
+   have=owns(st.i);var bal=W.balance(),pr=price(st.i),h='<div class="shopitem"><div class="e">'+it.e+'</div><div class="n">'+esc(it.n)+'</div>';
+   if(have)h+='<div class="need">You have it! 🎒</div><button class="b green big pulse" id="bGive">Give '+it.e+'</button>';
+   else if(bal>=pr)h+=coinsHTML(pr)+'<br><button class="b pink big pulse" id="bBuy">Buy it!</button>';
+   else h+=coinsHTML(pr)+'<div class="need">You need <b>'+(pr-bal)+'</b> more '+COIN+'</div><button class="b gold big pulse" id="bEarn">Get coins 📚</button>';
+   B.innerHTML='<div class="bc">'+h+'</div></div>';
+   if($('bGive'))onTap($('bGive'),function(){S.given[P.id+':'+st.i]=1;save();UI.sound('win');var e=B.querySelector('.e');e.className='e wiggle';later(stepDone,500)});
+   if($('bBuy'))onTap($('bBuy'),function(){if(buy(st.i)){UI.toast('You bought the '+it.n+'!');draw();UI.say('You bought it! Now give it.')}else{UI.sound('oops');draw()}});
+   if($('bEarn'))onTap($('bEarn'),earnPanel);
+  }
+  draw();var unwatch=W.balance();every(function(){if(W.balance()!==unwatch||owns(st.i)!==have){unwatch=W.balance();draw()}},1500);
+  M={clue:function(){if(owns(st.i))return 'Tap the green Give button!';var bal=W.balance(),pr=price(st.i);
+   if(bal>=pr)return 'Tap Buy it! It costs '+pr+' coins. You have '+bal+'.';
+   earnPanel();return 'You need '+(pr-bal)+' more coins. Play a learning game to earn them!'}};
+  if(given&&have){/* replaying: already given before */}
+ },
+ gem:function(st,B){
+  var L=P.land;talk(TW,'Look! The '+L.gemName+' gem! Tap it!');
+  B.innerHTML='<div class="gemfx'+(L.gem==='rainbow'?' rainbow':'')+'" id="gGem" style="background:'+(L.gem==='rainbow'?'':L.gem)+'"></div>';
+  if(L.gem==='rainbow'){var g=$('gGem');g.style.background='-webkit-linear-gradient(left,#ff4d6d,#ff9f43,#ffd23f,#3cb371,#4f8cff,#5b5bd6,#a35bd6)';g.style.background='linear-gradient(to right,#ff4d6d,#ff9f43,#ffd23f,#3cb371,#4f8cff,#5b5bd6,#a35bd6)'}
+  onTap($('gGem'),function(){UI.confetti(30);stepDone()});
+  M={clue:function(){return 'Tap the shining gem in the middle!'}};
+ }
+};
+
+/* "I need more coins" — sends her to the learning games, then back. */
+function earnPanel(){
+ var h='<div class="cg-big">📚</div><h2>Earn more coins!</h2><p>Play a learning game.<br>Every right answer gives coins.</p><div class="cg-cards">';
+ CeciliaGames.learn().forEach(function(g){h+='<a class="cg-gcard" style="background:'+g.bg+'" href="'+CeciliaGames.url(g)+'"><span class="cg-gi">'+g.icon+'</span><b>'+esc(g.title)+'</b><small>+10 '+COIN+' each</small></a>'});
+ h+='</div><p class="cg-small">Come back here after. Your adventure is saved!</p>';
+ UI.modal(h);UI.say('Earn more coins! Play a learning game. Then come back. Your adventure is saved!');
+}
+
+/* --- shop --- */
+var shopTab='quest';
+function landReached(){var n=nextLevel();return n?n.li:LANDS.length}
+function questNeeded(){ /* items for every level in the lands she has reached, so she can save up ahead */
+ var need={};
+ LANDS.forEach(function(L,li){if(landOpen(li))L.levels.forEach(function(lv,vi){lv.s.forEach(function(st){if(st.t==='buy')need[st.i]=lid(li,vi)})})});
+ return need;
+}
+function renderShop(fromLevel){
+ show('shop');var tabs=[['quest','📍 Quest'],['dress','👗 Dresses'],['hat','🎀 Hats'],['pet','🐱 Pets'],['home','🏡 Home']],h='<div class="row"><button class="b gray" id="pBack">⬅</button><h2 class="grow" style="text-align:center">🏪 Rainbow Shop</h2>'+
+  '<span class="pill">'+W.balance()+' '+COIN+'</span></div><div class="tabs">';
+ tabs.forEach(function(t){h+='<button class="tab'+(shopTab===t[0]?' on':'')+'" data-t="'+t[0]+'">'+t[1]+'</button>'});h+='</div><div class="shelf">';
+ var own=ownedMap(),need=questNeeded(),reach=landReached(),want=P&&cur!=='map'?P.lv.s[P.step]:null,list=[],k;
+ for(k in ITEMS)if(ITEMS[k].k===shopTab)list.push(k);
+ if(shopTab==='quest')list=list.filter(function(k){return need[k]});
+ if(!list.length)h+='<p style="font-size:24px">Play more levels to see new things! 🌈</p>';
+ list.forEach(function(k){var it=ITEMS[k],o=own[k]||price(k)===0,locked=(it.land||0)>reach,w=fromLevel&&P&&P.lv.s[P.step].i===k;
+  h+='<div class="it'+(o?' own':'')+(locked?' lock':'')+(w?' want':'')+'" data-k="'+k+'">'+(w?'<span class="tag">Needed!</span>':'')+
+   '<div class="e">'+(it.k==='dress'?'<span class="swatch" style="background:'+(it.c==='rainbow'?'#f0559b':it.c)+'"></span>':it.e)+'</div><div class="n">'+esc(it.n)+'</div>'+
+   (o?'<b style="color:#3cb371">✔ '+(it.k==='quest'?'In bag':'Mine')+'</b>':(locked?'🔒 Land '+((it.land||0)+1):coinsHTML(price(k))))+'</div>'});
+ h+='</div>';
+ if(fromLevel)h+='<div style="text-align:center"><button class="b pink big" id="pResume">▶ Back to level</button></div>';
+ $('s-shop').innerHTML=h;
+ onTap($('pBack'),function(){if(fromLevel&&P)resume();else renderMap()});
+ if($('pResume'))onTap($('pResume'),resume);
+ var ts=$('s-shop').querySelectorAll('.tab');for(var i=0;i<ts.length;i++)(function(t){onTap(t,function(){shopTab=t.getAttribute('data-t');renderShop(fromLevel)})})(ts[i]);
+ var is=$('s-shop').querySelectorAll('.it');for(i=0;i<is.length;i++)(function(d){onTap(d,function(){shopItem(d.getAttribute('data-k'),fromLevel)})})(is[i]);
+}
+function resume(){show('level');startLevel(P.id)}
+function shopItem(k,fromLevel){
+ var it=ITEMS[k],o=owns(k),bal=W.balance(),pr=price(k),reach=landReached();
+ if(o){if(it.k!=='quest'){wearIt(k);UI.toast('You are wearing it!')}else UI.toast('It is in your bag 🎒');renderShop(fromLevel);return}
+ if((it.land||0)>reach){UI.sound('oops');UI.toast('Reach land '+((it.land||0)+1)+' to unlock!');return}
+ var h='<div class="cg-big">'+(it.k==='dress'?'<span class="swatch" style="width:90px;height:90px;background:'+(it.c==='rainbow'?'#f0559b':it.c)+'"></span>':it.e)+'</div><h2>'+esc(it.n)+'</h2>'+coinsHTML(pr);
+ if(bal>=pr)h+='<p>Buy it?</p><button class="b pink big" id="yBuy">Yes, buy!</button><button class="b white" id="yNo">No</button>';
+ else h+='<p>You need <b>'+(pr-bal)+'</b> more coins.</p><button class="b gold big" id="yEarn">Get coins 📚</button>';
+ UI.modal(h);UI.say(bal>=pr?it.n+'. '+pr+' coins. Buy it?':'You need '+(pr-bal)+' more coins.');
+ if($('yBuy'))onTap($('yBuy'),function(){UI.close();if(buy(k)){if(it.k!=='quest')wearIt(k);UI.confetti(12);UI.toast('Yay! You got the '+it.n+'!')}renderShop(fromLevel)});
+ if($('yNo'))onTap($('yNo'),function(){UI.close()});
+ if($('yEarn'))onTap($('yEarn'),function(){UI.close();earnPanel()});
+}
+function wearIt(k){var it=ITEMS[k];if(it.k==='dress')S.wear.dress=k;else if(it.k==='hat')S.wear.hat=S.wear.hat===k?'':k;else if(it.k==='pet')S.wear.pet=S.wear.pet===k?'':k;save()}
+
+/* --- my home (tree house) --- */
+function renderHome(){
+ show('home');var own=ownedMap(),h='<div class="row"><button class="b gray" id="hBack">⬅</button><h2 class="grow" style="text-align:center">🏡 My Tree House</h2><button class="b orange" id="hShop">🏪 Shop</button></div>';
+ h+='<div class="house"><svg class="bg" viewBox="0 0 1000 580" preserveAspectRatio="none" style="position:absolute;top:0;left:0;width:100%;height:100%">'+
+  '<rect width="1000" height="580" fill="#d9f2ff"/><circle cx="880" cy="90" r="50" fill="#ffe27a"/><path d="M0 470 Q500 420 1000 470 L1000 580 L0 580Z" fill="#8fd18a"/>'+
+  '<rect x="440" y="250" width="120" height="250" rx="20" fill="#9b6b43"/><ellipse cx="500" cy="170" rx="380" ry="150" fill="#6fcf7f"/><ellipse cx="330" cy="200" rx="160" ry="100" fill="#5cbf6e"/><ellipse cx="680" cy="190" rx="170" ry="100" fill="#5cbf6e"/>'+
+  '<rect x="300" y="190" width="400" height="190" rx="24" fill="#f7d9a6" stroke="#c99a5e" stroke-width="8"/><path d="M280 200 L500 90 L720 200 Z" fill="#f0559b"/><rect x="460" y="270" width="80" height="110" rx="38" fill="#c98a5a"/>'+
+  '<rect x="340" y="230" width="80" height="60" rx="12" fill="#bfe6ff" stroke="#fff" stroke-width="6"/><rect x="580" y="230" width="80" height="60" rx="12" fill="#bfe6ff" stroke="#fff" stroke-width="6"/></svg>';
+ var k;for(k in ITEMS){var it=ITEMS[k];if(it.k!=='home')continue;h+='<span class="slot'+(own[k]?'':' empty')+'" style="left:'+it.x+'%;top:'+it.y+'%">'+(own[k]?it.e:'⭐')+'</span>'}
+ var fx=6;LANDS.forEach(function(L,i){if(gemDone(i)){h+='<span class="fr" style="left:'+fx+'%">'+L.friend.e+'</span>';fx+=i===2?22:9}});
+ h+='<div class="mebig">'+cecilia()+'</div>'+(S.wear.pet&&ITEMS[S.wear.pet]?'<span class="petbig">'+ITEMS[S.wear.pet].e+'</span>':'')+'</div>';
+ h+='<h2 style="text-align:center">My things</h2><div class="wear">';
+ var mine=0;for(k in ITEMS){var t=ITEMS[k];if(['dress','hat','pet'].indexOf(t.k)<0||!(own[k]||price(k)===0))continue;mine++;
+  var on=S.wear.dress===k||S.wear.hat===k||S.wear.pet===k;
+  h+='<div class="it'+(on?' on':'')+'" data-k="'+k+'"><div class="e">'+(t.k==='dress'?'<span class="swatch" style="background:'+(t.c==='rainbow'?'#f0559b':t.c)+'"></span>':t.e)+'</div><div class="n">'+esc(t.n)+'</div></div>'}
+ h+='</div><p style="text-align:center;font-size:22px">'+(mine<3?'Buy dresses, hats and pets in the shop! 🏪':'Tap a thing to wear it.')+'</p>';
+ $('s-home').innerHTML=h;
+ onTap($('hBack'),function(){renderMap()});onTap($('hShop'),function(){shopTab='home';renderShop()});
+ var is=$('s-home').querySelectorAll('.wear .it');for(var i=0;i<is.length;i++)(function(d){onTap(d,function(){wearIt(d.getAttribute('data-k'));UI.sound('pop');renderHome()})})(is[i]);
+ UI.say('Your tree house!');
+}
+
+/* --- the end --- */
+function ending(){
+ UI.confetti(40);
+ var h='<div class="cg-big">🌈</div><h2>You did it, Cecilia!</h2><div style="font-size:54px">'+LANDS.map(function(L){return L.friend.e}).join(' ')+'</div>'+
+  '<p class="end">The colors are back!<br>Cloudy is happy now.<br>All your friends say:<br><b>THANK YOU, RAINBOW HERO!</b></p>'+
+  '<p class="cg-small">Keep learning to buy new things for your home.</p><button class="b pink big" id="eOk">🏡 My Home</button>';
+ UI.modal(h,function(){renderMap(7)});UI.say('You did it, Cecilia! The colors are back! Thank you, Rainbow Hero!');
+ onTap($('eOk'),function(){UI.close();renderHome()});
+}
+
+/* refresh coin-dependent screens when coins arrive from the cloud */
+var lastBal=W.balance();
+W.onChange(function(){var b=W.balance();if(b===lastBal)return;lastBal=b;if(cur==='shop'&&!document.getElementById('cgModal'))renderShop(!!(P&&S.cur))});
+window.RainbowKingdom={S:function(){return S},step:function(){return P&&P.shown===P.step?P.step:-1},LANDS:LANDS,ITEMS:ITEMS,start:startLevel,map:renderMap,shop:renderShop,home:renderHome};
+
+if(S.seen.intro)renderMap();else renderTitle(0);
+cloudLoad();
+})();
+</script>
+</body>
+</html>
