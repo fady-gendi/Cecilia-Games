@@ -303,13 +303,15 @@ var LANDS=[
 ];
 
 /* ===================== state + saving ===================== */
-function fresh(){return {game:'rainbow',v:1,ts:0,total:0,done:{},given:{},seen:{},cur:null,wear:{dress:'d_pink',hat:'',pet:''},land:0}}
+function fresh(){return {game:'rainbow',v:1,ts:0,total:0,resetAt:0,done:{},given:{},seen:{},cur:null,wear:{dress:'d_pink',hat:'',pet:''},land:0}}
 function count(o){var n=0,k;for(k in o)if(o[k])n++;return n}
 function calcTotal(s){return count(s.done)*10+count(s.given)+count(s.seen)}
+/* resetAt: a grown-up restarted the game (parent page). Anything done before that moment is ignored, on every device. */
 function merge(a,b){
  var r=fresh(),k,newer=(b&&b.ts>(a&&a.ts||0))?b:a;
- [a,b].forEach(function(s){if(!s||s.game!=='rainbow')return;['done','given','seen'].forEach(function(f){for(k in s[f]||{})if(s[f][k])r[f][k]=s[f][k]})});
- if(newer&&newer.game==='rainbow'){r.cur=newer.cur||null;r.wear=Object.assign(r.wear,newer.wear||{});r.land=newer.land||0}
+ r.resetAt=Math.max(a&&a.resetAt||0,b&&b.resetAt||0);
+ [a,b].forEach(function(s){if(!s||s.game!=='rainbow')return;['done','given','seen'].forEach(function(f){for(k in s[f]||{})if(s[f][k]&&s[f][k]>=r.resetAt)r[f][k]=s[f][k]})});
+ if(newer&&newer.game==='rainbow'&&(newer.resetAt||0)>=r.resetAt){r.cur=newer.cur||null;r.wear=Object.assign(r.wear,newer.wear||{});r.land=newer.land||0}
  r.ts=Math.max(a&&a.ts||0,b&&b.ts||0);r.total=calcTotal(r);return r;
 }
 var S=(function(){try{var s=JSON.parse(localStorage.getItem(KEY));if(s&&s.game==='rainbow')return merge(s,null)}catch(e){}return fresh()})();
@@ -328,7 +330,8 @@ function cloudSave(){
 function cloudLoad(){
  CeciliaCloud.load(PROFILE).then(function(r){
   cloudReady=true;var cs=r&&r.state;
-  if(cs&&cs.game==='rainbow'){var before=S.total;S=merge(S,cs);try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){}if(S.total!==before&&cur==='map')renderMap()}
+  if(cs&&cs.game==='rainbow'){var before=S.total,wasReset=S.resetAt||0;S=merge(S,cs);try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){}
+   if((S.resetAt||0)>wasReset){if(cur!=='title')renderTitle(0)}else if(S.total!==before&&cur==='map')renderMap()}
   else if(cs)cloudForce=true;
   if(!cs||S.ts>=(cs.ts||0))cloudSave();
  })['catch'](function(){cloudReady=true;setTimeout(cloudLoad,30000)});
@@ -339,7 +342,7 @@ CeciliaCloud.onReconnect(function(){if(!cloudReady)cloudLoad();else cloudSave()}
 function price(id){return Math.max(0,Math.round(ITEMS[id].p*PRICE_SCALE))}
 function ownedMap(){
  var m={d_pink:1};
- W.purchases(SOURCE).forEach(function(e){if(e.meta&&e.meta.type==='adv'&&e.status!=='rejected'&&ITEMS[e.meta.item])m[e.meta.item]=1});
+ W.purchases(SOURCE).forEach(function(e){if(e.meta&&e.meta.type==='adv'&&e.status!=='rejected'&&ITEMS[e.meta.item]&&(e.created||0)>=(S.resetAt||0))m[e.meta.item]=1});
  return m;
 }
 function owns(id){return !!ownedMap()[id]||price(id)===0}
@@ -429,7 +432,7 @@ function renderTitle(i){
   (i===0&&S.seen.intro?'<button class="b gray" id="tSkip">Skip ▶▶</button>':'');
  $('s-title').innerHTML=h;UI.say(s.x);
  onTap($('tSay'),function(){UI.say(s.x)});
- onTap($('tNext'),function(){UI.sound('tap');if(i<STORY.length-1)renderTitle(i+1);else{S.seen.intro=1;save();renderMap()}});
+ onTap($('tNext'),function(){UI.sound('tap');if(i<STORY.length-1)renderTitle(i+1);else{S.seen.intro=new Date().getTime();save();renderMap()}});
  if($('tSkip'))onTap($('tSkip'),function(){renderMap()});
 }
 
@@ -652,7 +655,7 @@ var MECH={
    else if(bal>=pr)h+=coinsHTML(pr)+'<br><button class="b pink big pulse" id="bBuy">Buy it!</button>';
    else h+=coinsHTML(pr)+'<div class="need">You need <b>'+(pr-bal)+'</b> more '+COIN+'</div><button class="b gold big pulse" id="bEarn">Get coins 📚</button>';
    B.innerHTML='<div class="bc">'+h+'</div></div>';
-   if($('bGive'))onTap($('bGive'),function(){S.given[P.id+':'+st.i]=1;save();UI.sound('win');var e=B.querySelector('.e');e.className='e wiggle';later(stepDone,500)});
+   if($('bGive'))onTap($('bGive'),function(){S.given[P.id+':'+st.i]=new Date().getTime();save();UI.sound('win');var e=B.querySelector('.e');e.className='e wiggle';later(stepDone,500)});
    if($('bBuy'))onTap($('bBuy'),function(){if(buy(st.i)){UI.toast('You bought the '+it.n+'!');draw();UI.say('You bought it! Now give it.')}else{UI.sound('oops');draw()}});
    if($('bEarn'))onTap($('bEarn'),earnPanel);
   }

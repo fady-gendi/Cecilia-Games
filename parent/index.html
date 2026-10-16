@@ -104,12 +104,16 @@ function render(){
   '<div class="box cg-card"><h2>'+C+' Coins</h2><div id="coins"></div></div>'+
   '<div class="box cg-card actions"><h2>🎁 Give coins</h2><p class="small">A gift shows in her coin story as “Gift”.</p>'+
   '<button class="cg-btn cg-green" data-g="10">+10</button><button class="cg-btn cg-green" data-g="50">+50</button><button class="cg-btn cg-green" data-g="100">+100</button></div>'+
+  '<div class="box cg-card actions"><h2>🌈 Restart Rainbow Kingdom</h2><p class="small">Starts the adventure from the beginning on every iPad: story, levels, gems and bought things.<br>Learning games and her coins are not touched.</p>'+
+  '<label style="font-size:18px"><input type="checkbox" id="refund" checked style="width:auto;margin:0 8px 0 0;-webkit-appearance:checkbox"> Give back the coins spent in Rainbow Kingdom</label><br>'+
+  '<button class="cg-btn cg-orange" id="rkReset">Restart from scratch</button></div>'+
   '<div class="actions"><button class="cg-btn cg-blue" id="refresh">🔄 Refresh</button><button class="cg-btn cg-gray" id="out">Sign out</button></div>'+
   '<p class="small" style="text-align:center" id="st"></p>';
  var gs=document.querySelectorAll('[data-g]');for(var i=0;i<gs.length;i++)(function(b){b.onclick=function(){var n=+b.getAttribute('data-g');
   var c=UI.modal('<h2>Give '+n+' coins?</h2><button class="cg-btn cg-green" id="yes">Yes, give '+n+'</button><button class="cg-btn cg-gray" id="no">No</button>');
   $('yes').onclick=function(){W.award(n,'parent','Gift from parents');UI.close();UI.toast('+'+n+' coins given')};$('no').onclick=UI.close}})(gs[i]);
  $('refresh').onclick=function(){cloud={};loadCloud();draw()};
+ $('rkReset').onclick=resetAdventure;
  $('out').onclick=function(){try{localStorage.removeItem(SESSION)}catch(e){}showLogin()};
  draw();loadCloud();
 }
@@ -148,6 +152,20 @@ function draw(){
  $('st').textContent=(loading?'Loading from the cloud… ':'')+'Coin account: '+W.status();
 }
 function kpi(v,l){return '<div class="kpi cg-card"><b>'+v+'</b><span>'+esc(l)+'</span></div>'}
+/* Restart Rainbow Kingdom: a fresh save with resetAt=now. The game ignores progress and purchases older than resetAt. */
+function rkSpent(after){var n=0;W.purchases('littleworld').forEach(function(e){if(e.meta&&e.meta.type==='adv'&&e.status!=='rejected'&&(e.created||0)>=after)n-=e.delta});return n}
+function resetAdventure(){
+ var g=G.get('rk'),old=cloud.rk||G.localSave(g)||{},since=old.resetAt||0,spent=rkSpent(since),refund=$('refund').checked&&spent>0;
+ UI.modal('<h2>Restart Rainbow Kingdom?</h2><p>All 40 levels start again from the story.'+(refund?'<br>She gets back <b>'+spent+'</b> '+C+'.':'')+'</p><button class="cg-btn cg-orange" id="yes">Yes, restart</button><button class="cg-btn cg-gray" id="no">No</button>');
+ $('no').onclick=UI.close;
+ $('yes').onclick=function(){
+  var t=new Date().getTime(),fresh={game:'rainbow',v:1,ts:t,total:0,resetAt:t,done:{},given:{},seen:{},cur:null,wear:{dress:'d_pink',hat:'',pet:''},land:0};
+  try{localStorage.setItem(g.key,JSON.stringify(fresh))}catch(e){}
+  if(refund)W.award(spent,'parent','Rainbow Kingdom restart: coins back','parent:rkreset:'+t);
+  UI.close();UI.toast('Restarting…');
+  CeciliaCloud.save(g.profile,fresh,true).then(function(r){cloud.rk=fresh;draw();UI.toast(r.ok?'Rainbow Kingdom restarted ✔':'Saved here. Try again when online.')})['catch'](function(){UI.toast('No internet. Try again when online.')});
+ };
+}
 function rkDetail(s){
  var items=0,list=[];W.purchases('littleworld').forEach(function(e){if(e.meta&&e.meta.type==='adv'&&e.status!=='rejected'){items++}});
  return '<div class="small">Things bought: '+items+'</div>';

@@ -93,6 +93,17 @@ It shows: coins now, answers solved, stars, last played, a **language table** (l
 
 This is a light lock for a static website. The backend has no key, so do not put private data in game saves.
 
+## Deploy
+
+- **Games (website)**: push to `main`. GitHub Pages publishes in about a minute at https://fady-gendi.github.io/Cecilia-Games/. On the iPad, open the page, close it and open it again (it keeps an offline copy and updates in the background). Add it to the Home Screen via Share → *Add to Home Screen*.
+- **Server (coins/saves)**: only after changing `backend/Cecilia_Auto_Account_CodeGS.txt`, redeploy it as described in **Backend** below.
+
+## Restart Rainbow Kingdom from scratch
+
+Parent page (`parent/`) → **🌈 Restart Rainbow Kingdom** → *Restart from scratch*. It restarts the story, levels, gems and bought things on every iPad. Tick *Give back the coins spent* to return the coins. The learning games and her other coins are not touched.
+
+How it works: the save gets `resetAt` = now; the game ignores levels and purchases older than that, on every device, when it next goes online.
+
 ## Old iPad rules (must follow)
 
 Cecilia's iPad is about 13 years old (iOS 9 Safari). Everything must work there:
