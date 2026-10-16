@@ -1,43 +1,27 @@
-CECILIA GLOBAL ACCOUNT — VERSION 2.4
+CECILIA GAMES — VERSION 2.6 AUTOMATIC ACCOUNT
 
-The live game files share coins immediately on the same browser/device.
-Cloud sharing across devices needs this one-time backend deployment.
+The games now connect automatically to the deployed Cecilia Automatic Account.
+No family key, Parent connection form, per-device URL, or account-linking step
+is required. Open the updated games normally on each browser.
 
-1. Create a NEW Apps Script project at script.google.com. Do not replace the
-   existing Word Garden project. Paste Global_Wallet_CodeGS.txt into Code.gs.
-2. Run setupGlobalWallet once and approve access. It creates a new private
-   spreadsheet with Ledger and Game_Saves tabs. Existing games/sheets are untouched.
-3. Open Project Settings > Script properties. Copy FAMILY_KEY privately.
-4. Deploy > New deployment > Web app. Execute as: Me. Access: Anyone.
-   Copy the resulting /exec URL.
-5. On Cecilia’s Games open the shared coin account > Parent > cloud connection.
-   Paste the /exec URL and FAMILY_KEY. Connect, wait for “Cloud synced ✓”.
-   Do this on each device using the SAME URL and family key. Reload games afterwards.
+The original Apps Script project and its saved data have not been changed.
+The new dedicated backend was deployed by the owner. Its source is in
+Cecilia_Auto_Account_CodeGS.txt. It creates and uses its own account spreadsheet.
 
-Educational balances are imported once per source, using a maximum migration
-credit to avoid counting the same legacy balance twice on different devices.
-Math Quest’s existing solved problems convert at 10 coins each once. New
-answers earn 10 coins plus 5 for solving without help. First-time level
-completion adds 30 coins, with 20 extra for a completely independent level.
-Legacy language-game rewards, hints and sticker prices use the global wallet.
-Little World spends from that wallet; its old starter coins and repeatable
-cupcake coin rewards no longer mint currency. Existing objects are retained.
+Existing coins on a browser are imported once per educational game. Local
+progress is loaded first, then merged with the server save in the background.
+Open each game on the browser where Cecilia already plays so its local progress
+can reach the new service. Saves that exist only in the old server are retained
+there; this release does not read the old server without its original key.
 
-Stars, levels and trophies stay in the individual game progress. They are not
-spendable currency. Fashion Studio displays the same coin balance without
-awarding coins for non-educational free play.
+All six games display one shared coin account. The educational games award
+coins; Little World spends them. Fashion Studio remains free play with local
+favorite looks. Stars and trophies stay in their individual games.
 
-Cloud ledger changes are serialized with LockService and use unique transaction
-IDs for safe retry. The server rejects spending that would make coins negative.
-Offline purchases are provisional: a rejected purchase is removed on sync.
-Local changes queue until connection. Keep at least the original device until
-its wallet displays “Cloud synced ✓” and the imported coins are visible.
+The service is keyless and restricted to Cecilia's five progress profiles and
+virtual coin operations. Anyone who knows its URL can access that game data.
+Do not store passwords, contact information or other private data in it.
 
-KEYS: The key is kept on the device and in Apps Script properties, not in public
-GitHub source. The same configured backend also supports the existing game
-save protocol. After connection, each game uploads its current local progress.
-If another device has uncached progress only on the old cloud service, open
-that game on its original device before migration so its latest save is local.
-
-This assistant prepared the backend but cannot deploy Apps Script through the
-available GitHub connection. Cross-device sharing is not active until step 5.
+Offline play saves on the device. Requests retry when the browser reconnects.
+Offline purchases remain provisional until confirmed by the server. The ledger
+uses stable transaction IDs, serializes changes, and rejects overspending.
