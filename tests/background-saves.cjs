@@ -40,7 +40,7 @@ async function test(){
  // Math and World keep the original server protocol and their isolated save envelopes.
  e=environment();let c=e.context;c.mathEnvelope=payload=>({lv:{en:1,fr:1,ar:1},math:payload});c.MATH_PROFILE='cecilia_math_quest';let source=fs.readFileSync(__dirname+'/../math-quest/index.html','utf8');let fn=source.slice(source.indexOf('async function requestMath('),source.indexOf('async function cloudPushMath()'));vm.runInContext(fn,c);
  e.respond(async(url,opts)=>opts.method==='POST'?{ok:true}:{ok:true,state:{math:{solved:9}}});await c.requestMath('save',{solved:9});assert.equal(JSON.parse(e.requests.at(-1).opts.body).state.math.solved,9);assert.equal((await c.requestMath('load')).state.solved,9);
- c.envelope=()=>({lv:{en:1,fr:1,ar:1},world:{items:[{id:'existing'}]}});source=fs.readFileSync(__dirname+'/../little-world/index.html','utf8');fn=source.split('\n').find(l=>l.startsWith('async function request(action'));vm.runInContext(fn,c);await c.request('save');assert.equal(JSON.parse(e.requests.at(-1).opts.body).state.world.items[0].id,'existing');
+ c.envelope=()=>({lv:{en:1,fr:1,ar:1},world:{items:[{id:'existing'}]}});source=fs.readFileSync(__dirname+'/../little-world/index.html','utf8');fn=source.split('\n').find(l=>l.startsWith('async function request(action,force=false)'));vm.runInContext(fn,c);await c.request('save');assert.equal(JSON.parse(e.requests.at(-1).opts.body).state.world.items[0].id,'existing');
  console.log('PASS Math and World request schemas and preserved state');
 }
 test().catch(e=>{console.error(e);process.exitCode=1});

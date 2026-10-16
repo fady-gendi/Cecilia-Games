@@ -26,3 +26,4 @@ window.addEventListener('cecilia-cloud-change',function(){resume(true)});
 document.addEventListener('visibilitychange',function(){if(document.visibilityState==='visible')resume(false)});
 })();
 
+

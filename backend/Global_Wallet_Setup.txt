@@ -1,4 +1,4 @@
-CECILIA GAMES — VERSION 2.6 AUTOMATIC ACCOUNT
+CECILIA GAMES — VERSION 2.7 AUTOMATIC ACCOUNT
 
 The games now connect automatically to the deployed Cecilia Automatic Account.
 No family key, Parent connection form, per-device URL, or account-linking step
@@ -25,3 +25,11 @@ Do not store passwords, contact information or other private data in it.
 Offline play saves on the device. Requests retry when the browser reconnects.
 Offline purchases remain provisional until confirmed by the server. The ledger
 uses stable transaction IDs, serializes changes, and rejects overspending.
+
+PERFORMANCE IN VERSION 2.7
+Language pages load their existing trophy photos in one shared background file.
+Startup scripts are bundled into the HTML; saved progress and cloud APIs stay
+unchanged. Visited static pages are cached by a scoped service worker and
+refreshed in the background. Cloud requests are never served from that cache.
+The same-browser wallet snapshot can be reused for 15 seconds when no coin
+events are queued. Explicit sync and pending events still reach the server.

@@ -8,3 +8,4 @@ const oldPersist=persist;persist=function(){ensure();oldPersist()};
 const oldLoad=cloudLoadMath;cloudLoadMath=async function(manual){await oldLoad(manual);ensure();localMath();refresh()};
 W.onChange(refresh);ensure();localMath();
 })();
+

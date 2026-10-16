@@ -1,0 +1,15 @@
+{
+  "word-garden": {
+    "beforeBytes": 847136,
+    "afterBytes": 76212
+  },
+  "sentence-stars": {
+    "beforeBytes": 853878,
+    "afterBytes": 82954
+  },
+  "word-match": {
+    "beforeBytes": 848682,
+    "afterBytes": 77758
+  },
+  "photosSha256": "db8c4c5f881621f26185d483dd615dce2b1ff2bc965d3b2e0edddfe7e5ef4edf"
+}
