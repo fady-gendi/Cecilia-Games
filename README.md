@@ -131,14 +131,14 @@ Tell Claude or ChatGPT: *"Read README.md in the Cecilia-Games repo and make a ne
    - `kind`: `learn` (earns coins), `play` (no coins) or `adventure` (spends).
 
    The hub card, the top bar, the coin panel and the parent page then pick the game up automatically.
-3. **Set** `<body data-cg-game="as">`, keep the two shared tags (`../shared/cecilia.css?v=31` and `../shared/cecilia.js?v=31`), and write the game in ES5.
+3. **Set** `<body data-cg-game="as">`, keep the two shared tags (`../shared/cecilia.css?v=32` and `../shared/cecilia.js?v=32`), and write the game in ES5.
 4. **Coins**: `CeciliaWallet.award(coins, SOURCE, 'Right answer', SOURCE+':answer:'+CeciliaWallet.uid())`, following the coin rules above. Spending: `CeciliaWallet.spend(price, SOURCE, 'Item name', uniqueId, {type:'...', item:'...'})` returns `false` when she cannot afford it.
 5. **Save** with the standard progress fields, locally and with `CeciliaCloud.save(profile, state)`. The template shows both.
 6. **Look**: use `.cg-btn` (`cg-pink`, `cg-green`, `cg-blue`, `cg-orange`, `cg-gold`), `.cg-card`, `body class="cg-page"`, big emoji art and the palette in `shared/cecilia.css`.
 7. **Test**: `npm install && npm test`, then try it in portrait and landscape on an iPad. If you used newer emoji, rebuild the emoji pictures.
 8. **Ship**: commit and push to `main`. GitHub Pages updates in about a minute.
 
-Changing `shared/cecilia.js` or `cecilia.css`? Bump `?v=31` → `?v=32` in **all** pages and `CACHE` in `sw.js`, so iPads fetch the new copy.
+Changing `shared/cecilia.js` or `cecilia.css`? Bump `?v=32` → `?v=32` in **all** pages and `CACHE` in `sw.js`, so iPads fetch the new copy.
 
 ## Backend (Google Apps Script)
 

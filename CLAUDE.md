@@ -4,7 +4,7 @@ Read **README.md** first. It explains the purpose, every game, the shared coin a
 
 Hard rules:
 - Target device: a ~13-year-old iPad (iOS 9 Safari). **ES5 JavaScript only**, XMLHttpRequest instead of fetch, no CSS grid, variables or flex gap, Unicode 6.0 emoji in new pages.
-- Every page loads `../shared/cecilia.css?v=31` and `../shared/cecilia.js?v=31` and sets `<body data-cg-game="<id>">`. Never copy wallet or cloud code into a game.
+- Every page loads `../shared/cecilia.css?v=32` and `../shared/cecilia.js?v=32` and sets `<body data-cg-game="<id>">`. Never copy wallet or cloud code into a game.
 - New game = copy `_template/`, add one entry to `GAMES` in `shared/cecilia.js`, follow the coin rules (`CeciliaGames.coins`) and the standard save fields.
 - Coins are earned only in learning games; Rainbow Kingdom (source `littleworld`, profile `cecilia_little_world`; legacy ids the server knows) only spends.
 - Run `npm install && npm test` before committing. Deploy = push to `main` (GitHub Pages).

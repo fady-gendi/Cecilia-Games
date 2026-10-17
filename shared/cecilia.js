@@ -1,5 +1,5 @@
 /* Cecilia's Games shared runtime v3.1
- * ONE file every game loads:  <script src="../shared/cecilia.js?v=31"></script>
+ * ONE file every game loads:  <script src="../shared/cecilia.js?v=32"></script>
  * Provides: CeciliaGames (registry), CeciliaWallet (shared coins), CeciliaCloud (cloud saves),
  *           CeciliaUI (top bar, coin animation, toast, read-aloud, sounds), CeciliaPerformance.
  * RULE: ES5 only (no let/const/arrow/async/template strings). It must run on a 2012-2013 iPad (iOS 9 Safari).
@@ -239,6 +239,17 @@ function el(tag,cls,html){var e=document.createElement(tag);if(cls)e.className=c
 function esc(s){return String(s).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]})}
 /* The coin is drawn with CSS so it looks the same on every iPad (old iPads cannot show the 🪙 emoji). */
 var COIN='<i class="cg-c"></i>';
+/* Read-aloud voice: a higher pitch and a slower pace sound more like a child. pitch 0.5-2 (1 = normal), rate 0.5-1.5. */
+var VOICE={pitch:1.5,rate:0.85,
+ /* friendly voices to prefer when the iPad has them (first match wins) */
+ prefer:['Samantha','Karen','Moira','Tessa','Nicky','Shelley','Sandy','Flo','Amélie','Audrey','Marie','Thomas','Maged','Laila','Mariam','Google UK English Female','Google US English']};
+function kidVoice(code){
+ try{var all=speechSynthesis.getVoices()||[],base=code.slice(0,2),i,j,mine=[];
+  for(i=0;i<all.length;i++)if((all[i].lang||'').replace('_','-').slice(0,2)===base)mine.push(all[i]);
+  for(j=0;j<VOICE.prefer.length;j++)for(i=0;i<mine.length;i++)if(mine[i].name.indexOf(VOICE.prefer[j])===0)return mine[i];
+  return mine[0]||null;
+ }catch(e){return null}
+}
 var shownCoins=null,audioCtx=null,muted=lsGet('cecilia_sound')==='off';
 var UI={
  mountBar:function(opts){
@@ -292,7 +303,8 @@ var UI={
  say:function(text,lang){
   try{if(muted||!window.speechSynthesis||!window.SpeechSynthesisUtterance)return;
    var clean=String(text).replace(/<[^>]*>/g,' ').replace(/[\uD800-\uDBFF][\uDC00-\uDFFF]|[☀-➿]|️|🪙/g,' ');
-   speechSynthesis.cancel();var u=new SpeechSynthesisUtterance(clean);u.lang=lang==='fr'?'fr-FR':(lang==='ar'?'ar-SA':'en-US');u.rate=.88;u.pitch=1.1;speechSynthesis.speak(u);
+   speechSynthesis.cancel();var u=new SpeechSynthesisUtterance(clean),code=lang==='fr'?'fr-FR':(lang==='ar'?'ar-SA':'en-US'),v=kidVoice(code);u.lang=code;if(v)u.voice=v;
+   u.rate=VOICE.rate;u.pitch=VOICE.pitch;speechSynthesis.speak(u);
   }catch(e){}
  },
  sound:function(kind){
@@ -326,7 +338,7 @@ document.addEventListener('touchstart',function unlock(){try{var AC=window.Audio
 function emojiFallback(){
  var force=lsGet('cecilia_emoji_pictures')==='on'; /* set this to test the old-iPad look on a new device */
  if(!window.MutationObserver||(!force&&UI.canShow('🦊')&&UI.canShow('🪙')))return;
- var s=document.createElement('script');s.src=ROOT+'shared/emoji-old-ipad.js?v=31';
+ var s=document.createElement('script');s.src=ROOT+'shared/emoji-old-ipad.js?v=32';
  s.onload=function(){var P=window.CeciliaEmojiPictures,keys=[],k;for(k in P)keys.push(k);if(!keys.length)return;
   keys.sort(function(a,b){return b.length-a.length});var re=new RegExp('('+keys.join('|')+')'),urls={};
   function pic(ch){if(!urls[ch])urls[ch]='data:image/svg+xml;charset=utf-8,'+encodeURIComponent(P[ch]);var i=document.createElement('img');i.className='cg-emo';i.alt=ch;i.src=urls[ch];return i}

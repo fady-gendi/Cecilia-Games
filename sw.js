@@ -1,7 +1,7 @@
 /* Cecilia's Games v3.1 offline cache: pages open instantly and refresh in the background.
  * Cloud requests (script.google.com) are never cached. Old iPads without service workers simply skip this. */
 'use strict';
-var CACHE='cecilia-games-static-v31',PREFIX='cecilia-games-static-',ROOT=new URL('./',self.location.href);
+var CACHE='cecilia-games-static-v32',PREFIX='cecilia-games-static-',ROOT=new URL('./',self.location.href);
 function allowed(url){return url.origin===ROOT.origin&&url.pathname.indexOf(ROOT.pathname)===0&&!/\/sw\.js$/.test(url.pathname)&&(/\.(?:html|js|css|jpg|jpeg|png|webp|svg)$/.test(url.pathname)||/\/$/.test(url.pathname))}
 /* the ?v= number is part of the key, so bumping it in the pages fetches the new shared file */
 function key(url){var v=url.searchParams.get('v');return url.origin+url.pathname+(v?'?v='+v:'')}
